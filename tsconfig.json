@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "typeRoots": ["src/@types", "node_modules/@types"],
+    "esModuleInterop": true,
+    "module": "es6",
+    "target": "es5",
+    "moduleResolution": "node",
+    "allowImportingTsExtensions": true
+  },
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
+  },
+}
