@@ -67,7 +67,8 @@ const highlight = (
 };
 
 async function main() {
-  const searchDir = ".";
+  const searchDir = process.argv[2] ?? ".";
+  logger.log("Root search dir: ", searchDir);
   const workDir = ".";
   const cacheFileName = "librarian-cache.json";
   const cachePath = join(workDir, cacheFileName);
