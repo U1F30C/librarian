@@ -27,7 +27,20 @@ export class LibrarianCache {
   set(key: string, value: PdfFileReference<Page[]>) {
     this.cache[key] = value;
   }
-  getCacheStore(){
+  getCacheStore() {
     return this.cache;
+  }
+  getGhostKeys(actualKeys: string[]) {
+    const actualKeysMap = actualKeys.reduce((acc, key) => {
+      acc[key] = true;
+      return acc;
+    }, {} as { [key: string]: boolean });
+    const currentKeys = Object.keys(this.cache);
+    const ghostKeys = [];
+    for (const key of currentKeys) {
+      if (!actualKeysMap[key]) {
+        ghostKeys.push(key);
+      }
+    }
   }
 }
