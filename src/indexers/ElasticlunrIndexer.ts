@@ -18,7 +18,7 @@ export class ElasticlunrIndexer implements BaseIndexer<PdfFileReference<string>>
     this.elasticlunrIndex = elasticlunrIndex;
   }
   add(item: PdfFileReference) {
-    this.elasticlunrIndex.addDoc(item);
+    if (!this.exists(item.id)) this.elasticlunrIndex.addDoc(item);
   }
   remove(id: string) {
     this.elasticlunrIndex.removeDocByRef(id);
