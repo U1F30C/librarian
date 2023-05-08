@@ -25,6 +25,24 @@ const logger = {
   },
 };
 
+function getActionSkipper(every: number) {
+  return {
+    counter: 0,
+    step() {
+      this.counter = this.counter + 1;
+    },
+    shouldAct() {
+      return this.counter % every == 0;
+    },
+  };
+}
+
+const actionControllers = {
+  saveCache: getActionSkipper(10),
+  [MinisearchIndexer.indexerType]: getActionSkipper(10),
+  [ElasticlunrIndexer.indexerType]: getActionSkipper(10),
+};
+
 async function getFileContent(
   key: string,
   path: string,
@@ -34,7 +52,11 @@ async function getFileContent(
     logger.log(" - Cache miss: ", key);
     const content = await readPdfText(path);
     cache.set(key, { id: key, title: key, content });
-    await cache.dump();
+    actionControllers.saveCache.step();
+    if (actionControllers.saveCache.shouldAct()) {
+      logger.log(" ---------------------- Saving cache");
+      await cache.dump();
+    }
   }
   const fileReference = cache.get(key);
   return rawLinesToPlainText(fileReference.content);
@@ -118,10 +140,15 @@ async function main() {
       for (const indexer of searchIndexers) {
         const newIndexEntry = !indexer.exists(fileEntry.id);
         if (newIndexEntry) {
-          logger.log(" - New index entry, indexing and writting index");
+          logger.log(" - New index entry, indexing");
 
           indexer.add(fileEntry);
-          await indexer.dump();
+          const indexerName = (indexer as any).constructor.indexerType;
+          actionControllers[indexerName].step();
+          if (actionControllers[indexerName].shouldAct()) {
+            logger.log(" ---------------------- Writting index");
+            await indexer.dump();
+          }
         } else {
           // TODO: remove
           // logger.log(" - Renewing entry");
@@ -132,6 +159,9 @@ async function main() {
       logger.error(pdfDir, e);
     }
   }
+
+  await cache.dump();
+  await Promise.all(searchIndexers.map((indexer) => indexer.dump()));
   while (true) {
     const answer = await inquirer.prompt({
       type: "input",
