@@ -99,7 +99,7 @@ async function main() {
   if (!(await dirExists(searchDir)))
     throw new Error("Search directory does not exist");
   const dirs = await readDir(searchDir, { recursive: true });
-  const pdfDirs = dirs!.filter((dir) => dir.endsWith(".pdf"))
+  const pdfDirs = dirs!.filter((dir) => dir.endsWith(".pdf"));
   for (const pdfDir of pdfDirs) {
     const absolutePdfDir = join(searchDir, pdfDir);
     try {
