@@ -21,17 +21,25 @@ export class TrieSearchIndexer implements BaseIndexer<PdfFileReference> {
     return results;
   }
   exists(id: string): boolean {
-    return false;
+    throw new Error("Not implemented");
   }
-  remove(id: string): void {}
-  replace(id: string, item: PdfFileReference): void {}
+  remove(id: string): void {
+    throw new Error("Not implemented");
+  }
+  replace(id: string, item: PdfFileReference): void {
+    throw new Error("Not implemented");
+  }
   serialize() {
+    throw new Error("Not implemented");
     return "";
-    // return this.trie.toJSON();
   }
   deserialize(indexJson) {
-    // this.trie.fromJSON(indexJson);
+    throw new Error("Not implemented");
   }
-  async load() {}
-  async dump() {}
+  async load() {
+    throw new Error("Not implemented");
+  }
+  async dump() {
+    throw new Error("Not implemented");
+  }
 }
