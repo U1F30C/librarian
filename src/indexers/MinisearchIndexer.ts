@@ -21,7 +21,7 @@ export class MinisearchIndexer implements BaseIndexer<PdfFileReference<string>> 
   remove(id: string): void {
     this.minisearchEngine.remove({ id });
   }
-  replace(id: string, item: PdfFileReference): void {
+  put(id: string, item: PdfFileReference): void {
     if (this.exists(id)) this.remove(id);
     this.add(item);
   }

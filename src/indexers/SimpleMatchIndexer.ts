@@ -8,7 +8,7 @@ export class SimpleMatchIndexer implements BaseIndexer<PdfFileReference<string>>
   constructor(private cache: LibrarianCache, private indexPath: string) {}
   add(item: any): void {}
   remove(id: string): void {}
-  replace(id: string, item: any): void {}
+  put(id: string, item: any): void {}
   search(query: string): PdfFileReference[] {
     const store = this.cache.getCacheStore();
     // const results = Object.entries(store).filter(([key, value]) => {

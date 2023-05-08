@@ -26,7 +26,7 @@ export class TrieSearchIndexer implements BaseIndexer<PdfFileReference> {
   remove(id: string): void {
     throw new Error("Not implemented");
   }
-  replace(id: string, item: PdfFileReference): void {
+  put(id: string, item: PdfFileReference): void {
     throw new Error("Not implemented");
   }
   serialize() {
