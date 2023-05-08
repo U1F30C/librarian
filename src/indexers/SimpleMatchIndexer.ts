@@ -3,12 +3,24 @@ import { PdfFileReference } from "../types/pdf-file-reference";
 import { rawLinesToPlainText } from "../utils/raw-lines-to-plain-text";
 import { BaseIndexer } from "./BaseIndexer";
 
-export class SimpleMatchIndexer implements BaseIndexer<PdfFileReference<string>> {
+export class SimpleMatchIndexer
+  implements BaseIndexer<PdfFileReference<string>>
+{
   static indexerType = "simplematch";
-  constructor(private cache: LibrarianCache, private indexPath: string) {}
-  add(item: any): void {}
-  remove(id: string): void {}
-  put(id: string, item: any): void {}
+  cache: LibrarianCache;
+  constructor(cache: LibrarianCache, private indexPath: string) {
+    this.cache = cache.clone();
+  }
+  add(item: any): void {
+    // assume this is unnecessary
+  }
+  remove(id: string): void {
+    // the originalcache might keep ghost keys but they should be ignored in the search
+    this.cache.unset(id);
+  }
+  put(id: string, item: any): void {
+    // assume this is unnecessary
+  }
   search(query: string): PdfFileReference[] {
     const store = this.cache.getCacheStore();
     // const results = Object.entries(store).filter(([key, value]) => {
@@ -35,9 +47,16 @@ export class SimpleMatchIndexer implements BaseIndexer<PdfFileReference<string>>
     return !!this.cache.get(id);
   }
   serialize(): string {
+    throw new Error("Not implemented");
     return "";
   }
-  deserialize(indexJson: string) {}
-  async load() {}
-  async dump() {}
+  deserialize(indexJson: string) {
+    throw new Error("Not implemented");
+  }
+  async load() {
+    // assume this is unnecessary
+  }
+  async dump() {
+    // assume this is unnecessary
+  }
 }
