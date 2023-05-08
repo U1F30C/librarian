@@ -10,6 +10,7 @@ import { BaseIndexer } from "./indexers/BaseIndexer.ts";
 import { SimpleMatchIndexer } from "./indexers/SimpleMatchIndexer.ts";
 import chalk from "chalk";
 import { rawLinesToPlainText } from "./utils/raw-lines-to-plain-text.ts";
+import { MixedIndexer } from "./indexers/MixedIndexer.ts";
 
 async function readPdfText(path: string) {
   const pages = await _readPdfText(path);
@@ -109,15 +110,13 @@ async function main() {
     cache,
     join(workDir, `librarian-index-${SimpleMatchIndexer.indexerType}.json`)
   );
-  const searchIndexers: BaseIndexer<PdfFileReference>[] = [
-    elasticLunrIndexer,
+  const searchIndexerss: BaseIndexer<PdfFileReference>[] = [
+    // elasticLunrIndexer,
     minisearchIndexer,
-    simpleMatchIndexer,
+    // simpleMatchIndexer,
   ];
-  for (const indexer of searchIndexers) {
-    await indexer.load();
-  }
-
+  const indexer = new MixedIndexer(searchIndexerss);
+  indexer.load();
   if (!(await dirExists(searchDir)))
     throw new Error("Search directory does not exist");
   const dirs = await readDir(searchDir, { recursive: true });
@@ -126,6 +125,7 @@ async function main() {
     const absolutePdfDir = join(searchDir, pdfDir);
     try {
       logger.log("Processing: ", pdfDir);
+      // if (!cache.get(pdfDir)) continue;
       const pdfText: string = await getFileContent(
         pdfDir,
         absolutePdfDir,
@@ -137,7 +137,6 @@ async function main() {
         content: pdfText,
       };
 
-      for (const indexer of searchIndexers) {
         const newIndexEntry = !indexer.exists(fileEntry.id);
         if (newIndexEntry) {
           logger.log(" - New index entry, indexing");
@@ -153,7 +152,6 @@ async function main() {
           // TODO: remove
           // logger.log(" - Renewing entry");
           // indexer.replace(fileEntry.id, fileEntry);
-        }
       }
     } catch (e) {
       logger.error(pdfDir, e);
@@ -170,7 +168,6 @@ async function main() {
     });
     const searchTerm = answer.searchTerm;
     logger.log("Searching for: ", searchTerm);
-    for (const indexer of searchIndexers) {
       const indexerName = (indexer as any).constructor.indexerType;
       console.time(indexerName);
       const searchResults = indexer.search(searchTerm);
@@ -187,7 +184,6 @@ async function main() {
         }
         if (titleOccurrences.length > 0) console.log(chalk.blue(result.title));
       }
-    }
   }
 }
 main();

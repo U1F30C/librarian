@@ -4,7 +4,9 @@ import { LibrarianCache } from "../cache/cache";
 import { PdfFileReference } from "../types/pdf-file-reference";
 import { BaseIndexer } from "./BaseIndexer";
 
-export class MinisearchIndexer implements BaseIndexer<PdfFileReference<string>> {
+export class MinisearchIndexer
+  implements BaseIndexer<PdfFileReference<string>>
+{
   static indexerType = "minisearch";
   private minisearchEngine: Minisearch;
   private config = {
@@ -16,12 +18,16 @@ export class MinisearchIndexer implements BaseIndexer<PdfFileReference<string>> 
     this.minisearchEngine = minisearchEngine;
   }
   add(item: PdfFileReference): void {
+    // console.log("    add", MinisearchIndexer.indexerType, item.id);
+
     if (!this.exists(item.id)) this.minisearchEngine.add(item);
   }
   remove(id: string): void {
+    // console.log("    remove", MinisearchIndexer.indexerType, id);
     this.minisearchEngine.remove({ id });
   }
   put(id: string, item: PdfFileReference): void {
+    // console.log("    put", MinisearchIndexer.indexerType, id);
     if (this.exists(id)) this.remove(id);
     this.add(item);
   }
@@ -33,6 +39,8 @@ export class MinisearchIndexer implements BaseIndexer<PdfFileReference<string>> 
     return results.map((result) => this.cache.get(result.id));
   }
   exists(id: string): boolean {
+    const result = this.minisearchEngine.has(id);
+    console.log("    exists", MinisearchIndexer.indexerType, result);
     return this.minisearchEngine.has(id);
   }
   serialize(): string {
@@ -47,6 +55,12 @@ export class MinisearchIndexer implements BaseIndexer<PdfFileReference<string>> 
     }
   }
   async dump() {
+    console.log("    dump", MinisearchIndexer.indexerType);
+    // console.log(
+    //   "    exists Brent_GBC.pdf",
+    //   MinisearchIndexer.indexerType,
+    //   this.exists("Brent_GBC.pdf")
+    // );
     await writeFile(this.indexPath, this.serialize());
   }
 }

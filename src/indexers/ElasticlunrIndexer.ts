@@ -4,7 +4,9 @@ import { LibrarianCache } from "../cache/cache";
 import { PdfFileReference } from "../types/pdf-file-reference";
 import { BaseIndexer } from "./BaseIndexer";
 
-export class ElasticlunrIndexer implements BaseIndexer<PdfFileReference<string>> {
+export class ElasticlunrIndexer
+  implements BaseIndexer<PdfFileReference<string>>
+{
   static indexerType = "elasticlunr";
   private elasticlunrIndex: Elasticlunr.Index<PdfFileReference>;
   constructor(private cache: LibrarianCache, private indexPath: string) {
@@ -18,20 +20,25 @@ export class ElasticlunrIndexer implements BaseIndexer<PdfFileReference<string>>
     this.elasticlunrIndex = elasticlunrIndex;
   }
   add(item: PdfFileReference) {
+    // console.log("    add", ElasticlunrIndexer.indexerType, item.id);
     if (!this.exists(item.id)) this.elasticlunrIndex.addDoc(item);
   }
   remove(id: string) {
+    // console.log("    remove", ElasticlunrIndexer.indexerType, id);
     this.elasticlunrIndex.removeDocByRef(id);
   }
   put(id: string, item: PdfFileReference) {
+    // console.log("    put", ElasticlunrIndexer.indexerType, item.id);
     if (this.exists(id)) this.remove(id);
     this.add(item);
   }
-  search(query: string): PdfFileReference[]  {
+  search(query: string): PdfFileReference[] {
     const results = this.elasticlunrIndex.search(query, { expand: true });
     return results.map((result) => this.cache.get(result.ref));
   }
   exists(id: string): boolean {
+    const result = this.elasticlunrIndex.documentStore.hasDoc(id);
+    console.log("    exists", ElasticlunrIndexer.indexerType, result);
     return this.elasticlunrIndex.documentStore.hasDoc(id);
   }
   serialize() {
@@ -46,6 +53,12 @@ export class ElasticlunrIndexer implements BaseIndexer<PdfFileReference<string>>
     }
   }
   async dump() {
+    console.log("    dump", ElasticlunrIndexer.indexerType);
+    // console.log(
+    //   "    exists Brent_GBC.pdf",
+    //   ElasticlunrIndexer.indexerType,
+    //   this.exists("Brent_GBC.pdf")
+    // );
     await writeFile(this.indexPath, this.serialize());
   }
 }
