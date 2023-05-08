@@ -16,7 +16,7 @@ export class LibrarianCache {
     } else {
       cache = {};
     }
-    this.cache = cache;
+    this.setCacheStore(cache);
   }
   async dump() {
     return writeJSON(this.cachePath, this.cache as any, { pretty: false });
@@ -27,8 +27,19 @@ export class LibrarianCache {
   set(key: string, value: PdfFileReference<Page[]>) {
     this.cache[key] = value;
   }
+  unset(key: string) {
+    delete this.cache[key];
+  }
   getCacheStore() {
     return this.cache;
+  }
+  setCacheStore(cache: CacheData) {
+    this.cache = cache;
+  }
+  clone(): LibrarianCache {
+    const clone = new LibrarianCache(this.cachePath);
+    clone.setCacheStore({ ...this.cache });
+    return clone;
   }
   getGhostKeys(actualKeys: string[]) {
     const actualKeysMap = actualKeys.reduce((acc, key) => {
