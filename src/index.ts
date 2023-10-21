@@ -1,42 +1,22 @@
-import { readDir, dirExists } from "fs-safe";
-import { readPdfText as _readPdfText } from "pdf-text-reader";
-import { join } from "path";
-import inquirer from "inquirer";
-import { PdfFileReference } from "./types/pdf-file-reference";
-import { MinisearchIndexer } from "./indexers/MinisearchIndexer.ts";
-import { LibrarianCache } from "./cache/cache.ts";
-import { ElasticlunrIndexer } from "./indexers/ElasticlunrIndexer.ts";
-import { BaseIndexer } from "./indexers/BaseIndexer.ts";
-import { SimpleMatchIndexer } from "./indexers/SimpleMatchIndexer.ts";
 import chalk from "chalk";
+import { dirExists, readDir } from "fs-safe";
+import inquirer from "inquirer";
+import { join } from "path";
+import { readPdfText as _readPdfText } from "pdf-text-reader";
+import { LibrarianCache } from "./cache/cache.ts";
+import { BaseIndexer } from "./indexers/BaseIndexer.ts";
+import { ElasticlunrIndexer } from "./indexers/ElasticlunrIndexer.ts";
+import { MinisearchIndexer } from "./indexers/MinisearchIndexer.ts";
+import { SimpleMatchIndexer } from "./indexers/SimpleMatchIndexer.ts";
+import { PdfFileReference } from "./types/pdf-file-reference";
+import { getActionSkipper } from "./utils/action-skipper.ts";
+import { logger } from "./utils/logger.ts";
 import { rawLinesToPlainText } from "./utils/raw-lines-to-plain-text.ts";
 
 async function readPdfText(path: string) {
   const pages = await _readPdfText(path);
   return pages;
 }
-
-const logger = {
-  log: (...args: any[]) => {
-    console.log(...args);
-  },
-  error: (...args: any[]) => {
-    console.error(...args);
-  },
-};
-
-function getActionSkipper(every: number) {
-  return {
-    counter: 0,
-    step() {
-      this.counter = this.counter + 1;
-    },
-    shouldAct() {
-      return this.counter % every == 0;
-    },
-  };
-}
-
 const actionControllers = {
   saveCache: getActionSkipper(10),
   [MinisearchIndexer.indexerType]: getActionSkipper(10),
