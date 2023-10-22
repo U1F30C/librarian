@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "license": "MIT",
   "scripts": {
-    "start": "ts-node src/index.ts",
+    "start": "ts-node src/index.ts --max_old_space_size=4096",
     "build": "tsc"
   },
   "dependencies": {
