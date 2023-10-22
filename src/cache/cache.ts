@@ -2,6 +2,7 @@ import { Database, open } from "sqlite";
 import sqlite3 from "sqlite3";
 import { IndexableFileReference } from "../types/pdf-file-reference";
 import { rawLinesToPlainText } from "../utils/raw-lines-to-plain-text";
+import { Page } from "pdf-text-reader";
 
 interface FileDBModel {
   id: number;
@@ -11,13 +12,23 @@ interface FileDBModel {
   textContent: string;
 }
 
-export function cacheToIndexableFileReference(cache: FileDBModel): IndexableFileReference {
+export function cacheToIndexableFileReference(cache: FileDBModel): IndexableFileReference<string> {
   return {
     id: cache.hash,
     title: cache.path,
     content: rawLinesToPlainText(JSON.parse(cache.textContent)),
   };
 }
+
+export function indexableFileReferenceToCache(cache: IndexableFileReference<Page[]>, type: string): Omit<FileDBModel, "id"> {
+  return {
+    path: cache.title,
+    hash: cache.id,
+    mimeType: type,
+    textContent: JSON.stringify(cache.content),
+  };
+}
+
 
 // file path is used to quickly check if the file has been read
 // file hash is used to check if the file has been renamed, it is seen as the true unique identifier
@@ -53,7 +64,7 @@ export class LibrarianCache {
     await this.db.close();
   }
 
-    async getByPath(key: string): Promise<IndexableFileReference> {
+  async getByPath(key: string): Promise<IndexableFileReference> {
     const query = `SELECT * FROM files WHERE path = ?`;
     const result = await this.db.get<FileDBModel>(query, key);
     if (!result) return null;
@@ -74,9 +85,10 @@ export class LibrarianCache {
     return cacheToIndexableFileReference(result);
   }
 
-  async set(path: string, hash: string, value: IndexableFileReference<string>, mimeType: string) {
+  async set(value: IndexableFileReference<Page[]>, mimeType: string) {
     const query = `INSERT INTO files (path, hash, textContent, mimeType) VALUES (?, ?, ?, ?)`;
-    await this.db.run(query, path, hash, value.content, mimeType);
+    const fileRefToInsert = indexableFileReferenceToCache(value, mimeType);
+    await this.db.run(query, fileRefToInsert.path, fileRefToInsert.hash, fileRefToInsert.textContent, mimeType);
   }
 
   async unsetByPath(path: string) {

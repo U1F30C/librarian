@@ -42,12 +42,10 @@ async function getFileContent(
     if(!await cache.getByHash(fileHash, relativePath)) {
       logger.log("   - Backup cache key miss: ", relativePath);
       await cache.set(
-        relativePath,
-        fileHash,
         {
           id: fileHash,
           title: relativePath,
-          content: JSON.stringify(content),
+          content: content,
         },
         "application/pdf",
       );
