@@ -9,6 +9,8 @@ export class ElasticlunrIndexer
 {
   static indexerType = "elasticlunr" as const;
   private lunrIndex: Lunr.Index;
+  // private indexerQueue: IndexableFileReference<string>[] = [];
+  // private indexerQueueExists: Set<string> = new Set();
   constructor(private cache: LibrarianCache, private indexPath: string) {
     const lunrIndex = Lunr(function (this) {
       this.ref("id");
@@ -22,7 +24,7 @@ export class ElasticlunrIndexer
   }
   add(item: IndexableFileReference) {
     throw new Error("Method not implemented.");
-    // if (!this.exists(item.id)) this.lunrIndex.(item);
+    // this.indexerQueue.push(item);
   }
   remove(id: string) {
     throw new Error("Method not implemented.");
@@ -40,9 +42,7 @@ export class ElasticlunrIndexer
     return Promise.all(fullDataResult);
   }
   exists(id: string): boolean {
-    throw new Error("Method not implemented.");
-    return false;
-    // return this.lunrIndex
+    this.
   }
   serialize() {
     return JSON.stringify(this.lunrIndex);
