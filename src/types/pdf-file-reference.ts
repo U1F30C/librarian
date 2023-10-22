@@ -1,4 +1,4 @@
-export interface PdfFileReference<Content = any> {
+export interface IndexableFileReference<Content = any> {
   id: string;
   title: string;
   content: Content;

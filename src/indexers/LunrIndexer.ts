@@ -1,11 +1,11 @@
 import Lunr from "lunr";
 import { fileExists, readFile, writeFile } from "fs-safe";
 import { LibrarianCache } from "../cache/cache";
-import { PdfFileReference } from "../types/pdf-file-reference";
+import { IndexableFileReference } from "../types/pdf-file-reference";
 import { BaseIndexer } from "./BaseIndexer";
 
 export class ElasticlunrIndexer
-  implements BaseIndexer<PdfFileReference<string>>
+  implements BaseIndexer<IndexableFileReference<string>>
 {
   static indexerType = "elasticlunr" as const;
   private lunrIndex: Lunr.Index;
@@ -20,7 +20,7 @@ export class ElasticlunrIndexer
     });
     this.lunrIndex = lunrIndex;
   }
-  add(item: PdfFileReference) {
+  add(item: IndexableFileReference) {
     throw new Error("Method not implemented.");
     // if (!this.exists(item.id)) this.lunrIndex.(item);
   }
@@ -28,11 +28,11 @@ export class ElasticlunrIndexer
     throw new Error("Method not implemented.");
     // this.lunrIndex.remove(id);
   }
-  put(id: string, item: PdfFileReference) {
+  put(id: string, item: IndexableFileReference) {
     if (this.exists(id)) this.remove(id);
     this.add(item);
   }
-  async search(query: string): Promise<PdfFileReference[]> {
+  async search(query: string): Promise<IndexableFileReference[]> {
     const results = this.lunrIndex.search(query);
     const fullDataResult = results.map((result) =>
       this.cache.getByPath(result.ref)

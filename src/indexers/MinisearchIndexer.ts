@@ -1,11 +1,11 @@
 import { fileExists, readFile, writeFile } from "fs-safe";
 import Minisearch from "minisearch";
 import { LibrarianCache } from "../cache/cache";
-import { PdfFileReference } from "../types/pdf-file-reference";
+import { IndexableFileReference } from "../types/pdf-file-reference";
 import { BaseIndexer } from "./BaseIndexer";
 
 export class MinisearchIndexer
-  implements BaseIndexer<PdfFileReference<string>>
+  implements BaseIndexer<IndexableFileReference<string>>
 {
   static indexerType = "minisearch";
   private minisearchEngine: Minisearch;
@@ -17,17 +17,17 @@ export class MinisearchIndexer
     const minisearchEngine = new Minisearch(this.config);
     this.minisearchEngine = minisearchEngine;
   }
-  add(item: PdfFileReference): void {
+  add(item: IndexableFileReference): void {
     if (!this.exists(item.id)) this.minisearchEngine.add(item);
   }
   remove(id: string): void {
     this.minisearchEngine.remove({ id });
   }
-  put(id: string, item: PdfFileReference): void {
+  put(id: string, item: IndexableFileReference): void {
     if (this.exists(id)) this.remove(id);
     this.add(item);
   }
-  search(query: string): Promise<PdfFileReference[]> {
+  search(query: string): Promise<IndexableFileReference[]> {
     const results = this.minisearchEngine.search(query, {
       prefix: true,
       fuzzy: 0.2,

@@ -8,7 +8,7 @@ import { BaseIndexer } from "./indexers/BaseIndexer.ts";
 import { ElasticlunrIndexer } from "./indexers/ElasticlunrIndexer.ts";
 import { MinisearchIndexer } from "./indexers/MinisearchIndexer.ts";
 import { SimpleMatchIndexer } from "./indexers/SimpleMatchIndexer.ts";
-import { PdfFileReference } from "./types/pdf-file-reference";
+import { IndexableFileReference } from "./types/pdf-file-reference";
 import { getActionSkipper } from "./utils/action-skipper.ts";
 import { logger } from "./utils/logger.ts";
 import { rawLinesToPlainText } from "./utils/raw-lines-to-plain-text.ts";
@@ -42,11 +42,16 @@ async function getFileContent(
     const fileHash = await hash(fileBinaryData);
     if(!await cache.getByHash(fileHash, relativePath)) {
       logger.log("   - Backup cache key miss: ", relativePath);
-      await cache.set(relativePath, fileHash, {
-        id: relativePath,
-        title: relativePath,
-        content: JSON.stringify(content),
-      });
+      await cache.set(
+        relativePath,
+        fileHash,
+        {
+          id: relativePath,
+          title: relativePath,
+          content: JSON.stringify(content),
+        },
+        "application/pdf",
+      );
     }
   }
   const fileReference = await cache.getByPath(relativePath);
@@ -101,7 +106,7 @@ async function main() {
     cache,
     join(workDir, `librarian-index-${SimpleMatchIndexer.indexerType}.json`)
   );
-  const searchIndexers: BaseIndexer<PdfFileReference>[] = [
+  const searchIndexers: BaseIndexer<IndexableFileReference>[] = [
     elasticLunrIndexer,
     // minisearchIndexer,
     // simpleMatchIndexer,
@@ -126,7 +131,7 @@ async function main() {
         absolutePdfDir,
         cache
       );
-      const fileEntry: PdfFileReference = {
+      const fileEntry: IndexableFileReference = {
         id: pdfDir,
         title: pdfDir,
         content: pdfText,

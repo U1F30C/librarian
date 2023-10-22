@@ -1,16 +1,16 @@
 import Elasticlunr from "elasticlunr";
 import { fileExists, readFile, writeFile } from "fs-safe";
 import { LibrarianCache } from "../cache/cache";
-import { PdfFileReference } from "../types/pdf-file-reference";
+import { IndexableFileReference } from "../types/pdf-file-reference";
 import { BaseIndexer } from "./BaseIndexer";
 
 export class ElasticlunrIndexer
-  implements BaseIndexer<PdfFileReference<string>>
+  implements BaseIndexer<IndexableFileReference<string>>
 {
   static indexerType = "elasticlunr" as const;
-  private elasticlunrIndex: Elasticlunr.Index<PdfFileReference>;
+  private elasticlunrIndex: Elasticlunr.Index<IndexableFileReference>;
   constructor(private cache: LibrarianCache, private indexPath: string) {
-    const elasticlunrIndex = Elasticlunr<PdfFileReference>(function (this) {
+    const elasticlunrIndex = Elasticlunr<IndexableFileReference>(function (this) {
       this.setRef("id");
 
       this.addField("title");
@@ -19,17 +19,17 @@ export class ElasticlunrIndexer
     });
     this.elasticlunrIndex = elasticlunrIndex;
   }
-  add(item: PdfFileReference) {
+  add(item: IndexableFileReference) {
     if (!this.exists(item.id)) this.elasticlunrIndex.addDoc(item);
   }
   remove(id: string) {
     this.elasticlunrIndex.removeDocByRef(id);
   }
-  put(id: string, item: PdfFileReference) {
+  put(id: string, item: IndexableFileReference) {
     if (this.exists(id)) this.remove(id);
     this.add(item);
   }
-  search(query: string): Promise<PdfFileReference[]> {
+  search(query: string): Promise<IndexableFileReference[]> {
     const results = this.elasticlunrIndex.search(query, { expand: true });
     const fullDataResult = results.map((result) =>
       this.cache.getByPath(result.ref)

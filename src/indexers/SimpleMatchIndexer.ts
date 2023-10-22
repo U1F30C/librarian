@@ -1,10 +1,10 @@
 import { LibrarianCache } from "../cache/cache";
-import { PdfFileReference } from "../types/pdf-file-reference";
+import { IndexableFileReference } from "../types/pdf-file-reference";
 import { rawLinesToPlainText } from "../utils/raw-lines-to-plain-text";
 import { BaseIndexer } from "./BaseIndexer";
 
 export class SimpleMatchIndexer
-  implements BaseIndexer<PdfFileReference<string>>
+  implements BaseIndexer<IndexableFileReference<string>>
 {
   static indexerType = "simplematch";
   cache: LibrarianCache;
@@ -21,7 +21,7 @@ export class SimpleMatchIndexer
   put(id: string, item: any): void {
     // assume this is unnecessary
   }
-  async search(query: string): Promise<PdfFileReference[]> {
+  async search(query: string): Promise<IndexableFileReference[]> {
     const store = this.cache.getCacheStore();
     // const results = Object.entries(store).filter(([key, value]) => {
     //   return (

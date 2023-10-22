@@ -1,11 +1,11 @@
 import TrieSearch from "trie-search";
-import { PdfFileReference } from "../types/pdf-file-reference";
+import { IndexableFileReference } from "../types/pdf-file-reference";
 import { BaseIndexer } from "./BaseIndexer";
 // not viable, doesn't support loading data from json and the indexes are ginnourmous
-export class TrieSearchIndexer implements BaseIndexer<PdfFileReference> {
-  trieSearchIndex: TrieSearch<PdfFileReference>;
+export class TrieSearchIndexer implements BaseIndexer<IndexableFileReference> {
+  trieSearchIndex: TrieSearch<IndexableFileReference>;
   constructor() {
-    const trieSearchIndex = new TrieSearch<PdfFileReference>(
+    const trieSearchIndex = new TrieSearch<IndexableFileReference>(
       ["title", "content"],
       {
         idFieldOrFunction: "id",
@@ -13,7 +13,7 @@ export class TrieSearchIndexer implements BaseIndexer<PdfFileReference> {
     );
     this.trieSearchIndex = trieSearchIndex;
   }
-  add(item: PdfFileReference) {
+  add(item: IndexableFileReference) {
     this.trieSearchIndex.add(item);
   }
   async search(query: string) {
@@ -26,7 +26,7 @@ export class TrieSearchIndexer implements BaseIndexer<PdfFileReference> {
   remove(id: string): void {
     throw new Error("Not implemented");
   }
-  put(id: string, item: PdfFileReference): void {
+  put(id: string, item: IndexableFileReference): void {
     throw new Error("Not implemented");
   }
   serialize() {

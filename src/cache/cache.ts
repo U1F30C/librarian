@@ -1,11 +1,12 @@
 import { Database, open } from "sqlite";
 import sqlite3 from "sqlite3";
-import { PdfFileReference } from "../types/pdf-file-reference";
+import { IndexableFileReference } from "../types/pdf-file-reference";
 
 interface FileDBModel {
   id: number;
   path: string;
   hash: string;
+  mimeType: string;
   textContent: string;
 }
 
@@ -26,6 +27,7 @@ export class LibrarianCache {
       id INTEGER PRIMARY KEY,
       path TEXT NOT NULL,
       hash TEXT NOT NULL,
+      mimeType TEXT NOT NULL,
       textContent TEXT NOT NULL
     )`);
 
@@ -42,7 +44,7 @@ export class LibrarianCache {
     await this.db.close();
   }
 
-  async getByPath(key: string): Promise<PdfFileReference> {
+  async getByPath(key: string): Promise<IndexableFileReference> {
     const query = `SELECT * FROM files WHERE path = ?`;
     const result = await this.db.get<FileDBModel>(query, key);
     if (!result) return null;
@@ -53,7 +55,7 @@ export class LibrarianCache {
     };
   }
 
-  async getByHash(hash: string, path: string): Promise<PdfFileReference> {
+  async getByHash(hash: string, path: string): Promise<IndexableFileReference> {
     const query = `SELECT * FROM files WHERE hash = ?`;
     const result = await this.db.get<FileDBModel>(query, hash);
     if (result && result.path !== path) {
@@ -71,9 +73,9 @@ export class LibrarianCache {
     };
   }
 
-  async set(path: string, hash: string, value: PdfFileReference<string>) {
-    const query = `INSERT INTO files (path, hash, textContent) VALUES (?, ?, ?)`;
-    await this.db.run(query, path, hash, value.content);
+  async set(path: string, hash: string, value: IndexableFileReference<string>, mimeType: string) {
+    const query = `INSERT INTO files (path, hash, textContent, mimeType) VALUES (?, ?, ?, ?)`;
+    await this.db.run(query, path, hash, value.content, mimeType);
   }
 
   async unsetByPath(path: string) {
