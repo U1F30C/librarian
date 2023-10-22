@@ -4,8 +4,10 @@ import { LibrarianCache } from "../cache/cache";
 import { PdfFileReference } from "../types/pdf-file-reference";
 import { BaseIndexer } from "./BaseIndexer";
 
-export class ElasticlunrIndexer implements BaseIndexer<PdfFileReference<string>> {
-  static indexerType = "elasticlunr";
+export class ElasticlunrIndexer
+  implements BaseIndexer<PdfFileReference<string>>
+{
+  static indexerType = "elasticlunr" as const;
   private elasticlunrIndex: Elasticlunr.Index<PdfFileReference>;
   constructor(private cache: LibrarianCache, private indexPath: string) {
     const elasticlunrIndex = Elasticlunr<PdfFileReference>(function (this) {
@@ -27,9 +29,12 @@ export class ElasticlunrIndexer implements BaseIndexer<PdfFileReference<string>>
     if (this.exists(id)) this.remove(id);
     this.add(item);
   }
-  search(query: string): PdfFileReference[]  {
+  search(query: string): Promise<PdfFileReference[]> {
     const results = this.elasticlunrIndex.search(query, { expand: true });
-    return results.map((result) => this.cache.get(result.ref));
+    const fullDataResult = results.map((result) =>
+      this.cache.getByPath(result.ref)
+    );
+    return Promise.all(fullDataResult);
   }
   exists(id: string): boolean {
     return this.elasticlunrIndex.documentStore.hasDoc(id);

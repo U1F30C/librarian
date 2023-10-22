@@ -4,7 +4,9 @@ import { LibrarianCache } from "../cache/cache";
 import { PdfFileReference } from "../types/pdf-file-reference";
 import { BaseIndexer } from "./BaseIndexer";
 
-export class MinisearchIndexer implements BaseIndexer<PdfFileReference<string>> {
+export class MinisearchIndexer
+  implements BaseIndexer<PdfFileReference<string>>
+{
   static indexerType = "minisearch";
   private minisearchEngine: Minisearch;
   private config = {
@@ -25,12 +27,15 @@ export class MinisearchIndexer implements BaseIndexer<PdfFileReference<string>> 
     if (this.exists(id)) this.remove(id);
     this.add(item);
   }
-  search(query: string): PdfFileReference[] {
+  search(query: string): Promise<PdfFileReference[]> {
     const results = this.minisearchEngine.search(query, {
       prefix: true,
       fuzzy: 0.2,
     });
-    return results.map((result) => this.cache.get(result.id));
+    const fullDataResult = results.map((result) =>
+      this.cache.getByPath(result.id)
+    );
+    return Promise.all(fullDataResult);
   }
   exists(id: string): boolean {
     return this.minisearchEngine.has(id);

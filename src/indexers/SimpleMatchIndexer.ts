@@ -9,19 +9,19 @@ export class SimpleMatchIndexer
   static indexerType = "simplematch";
   cache: LibrarianCache;
   constructor(cache: LibrarianCache, private indexPath: string) {
-    this.cache = cache.clone();
+    // this.cache = cache.clone();
   }
   add(item: any): void {
     // assume this is unnecessary
   }
   remove(id: string): void {
     // the originalcache might keep ghost keys but they should be ignored in the search
-    this.cache.unset(id);
+    // this.cache.unset(id);
   }
   put(id: string, item: any): void {
     // assume this is unnecessary
   }
-  search(query: string): PdfFileReference[] {
+  async search(query: string): Promise<PdfFileReference[]> {
     const store = this.cache.getCacheStore();
     // const results = Object.entries(store).filter(([key, value]) => {
     //   return (
@@ -44,7 +44,7 @@ export class SimpleMatchIndexer
     return results.map(([key, value]) => value);
   }
   exists(id: string): boolean {
-    return !!this.cache.get(id);
+    return !!this.cache.getByPath(id);
   }
   serialize(): string {
     throw new Error("Not implemented");

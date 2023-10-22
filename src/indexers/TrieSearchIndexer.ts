@@ -16,7 +16,7 @@ export class TrieSearchIndexer implements BaseIndexer<PdfFileReference> {
   add(item: PdfFileReference) {
     this.trieSearchIndex.add(item);
   }
-  search(query) {
+  async search(query: string) {
     const results = this.trieSearchIndex.get(query);
     return results;
   }

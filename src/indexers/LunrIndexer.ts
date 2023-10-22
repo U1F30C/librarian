@@ -7,7 +7,7 @@ import { BaseIndexer } from "./BaseIndexer";
 export class ElasticlunrIndexer
   implements BaseIndexer<PdfFileReference<string>>
 {
-  static indexerType = "elasticlunr";
+  static indexerType = "elasticlunr" as const;
   private lunrIndex: Lunr.Index;
   constructor(private cache: LibrarianCache, private indexPath: string) {
     const lunrIndex = Lunr(function (this) {
@@ -32,9 +32,12 @@ export class ElasticlunrIndexer
     if (this.exists(id)) this.remove(id);
     this.add(item);
   }
-  search(query: string): PdfFileReference[] {
+  async search(query: string): Promise<PdfFileReference[]> {
     const results = this.lunrIndex.search(query);
-    return results.map((result) => this.cache.get(result.ref));
+    const fullDataResult = results.map((result) =>
+      this.cache.getByPath(result.ref)
+    );
+    return Promise.all(fullDataResult);
   }
   exists(id: string): boolean {
     throw new Error("Method not implemented.");

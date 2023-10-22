@@ -12,34 +12,45 @@ import { PdfFileReference } from "./types/pdf-file-reference";
 import { getActionSkipper } from "./utils/action-skipper.ts";
 import { logger } from "./utils/logger.ts";
 import { rawLinesToPlainText } from "./utils/raw-lines-to-plain-text.ts";
+import { hash } from "./utils/hash.ts";
+import { readFile } from "fs/promises";
 
-async function readPdfText(path: string) {
-  const pages = await _readPdfText(path);
+let shouldExit = false;
+process.on("SIGINT", function () {
+  shouldExit = true;
+  logger.log("Caught interrupt signal");
+});
+
+async function readPdfText(data: Buffer) {
+  const pages = await _readPdfText(data);
   return pages;
 }
 const actionControllers = {
-  saveCache: getActionSkipper(10),
   [MinisearchIndexer.indexerType]: getActionSkipper(10),
   [ElasticlunrIndexer.indexerType]: getActionSkipper(10),
-};
+} as const;
 
 async function getFileContent(
-  key: string,
-  path: string,
+  relativePath: string,
+  absolutePath: string,
   cache: LibrarianCache
 ) {
-  if (!cache.get(key)) {
-    logger.log(" - Cache miss: ", key);
-    const content = await readPdfText(path);
-    cache.set(key, { id: key, title: key, content });
-    actionControllers.saveCache.step();
-    if (actionControllers.saveCache.shouldAct()) {
-      logger.log(" ---------------------- Saving cache");
-      await cache.dump();
+  if (!(await cache.getByPath(relativePath))) {
+    logger.log(" - Cache miss: ", relativePath);
+    const fileBinaryData = await readFile(absolutePath);
+    const content = await readPdfText(fileBinaryData);
+    const fileHash = await hash(fileBinaryData);
+    if(!await cache.getByHash(fileHash, relativePath)) {
+      logger.log("   - Backup cache key miss: ", relativePath);
+      await cache.set(relativePath, fileHash, {
+        id: relativePath,
+        title: relativePath,
+        content: JSON.stringify(content),
+      });
     }
   }
-  const fileReference = cache.get(key);
-  return rawLinesToPlainText(fileReference.content);
+  const fileReference = await cache.getByPath(relativePath);
+  return rawLinesToPlainText(JSON.parse(fileReference.content));
 }
 
 function findAllOccurences(text: string, query: string): number[] {
@@ -69,13 +80,14 @@ const highlight = (
 };
 
 async function main() {
-  const searchDir = process.argv[2] ?? ".";
+  console.log(process.argv);
+  const searchDir = process.argv[3] ?? ".";
   logger.log("Root search dir: ", searchDir);
   const workDir = ".";
-  const cacheFileName = "librarian-cache.json";
+  const cacheFileName = "librarian-cache.db";
   const cachePath = join(workDir, cacheFileName);
   const cache = new LibrarianCache(cachePath);
-  logger.log("Loadig cache");
+  logger.log("Loading cache");
   await cache.load();
   const elasticLunrIndexer = new ElasticlunrIndexer(
     cache,
@@ -91,10 +103,12 @@ async function main() {
   );
   const searchIndexers: BaseIndexer<PdfFileReference>[] = [
     elasticLunrIndexer,
-    minisearchIndexer,
-    simpleMatchIndexer,
+    // minisearchIndexer,
+    // simpleMatchIndexer,
   ];
+  logger.log("Loading indexers");
   for (const indexer of searchIndexers) {
+    logger.log(" - ", (indexer as any).constructor.indexerType);
     await indexer.load();
   }
 
@@ -103,6 +117,7 @@ async function main() {
   const dirs = await readDir(searchDir, { recursive: true });
   const pdfDirs = dirs!.filter((dir) => dir.endsWith(".pdf"));
   for (const pdfDir of pdfDirs) {
+    if (shouldExit) process.exit(0);
     const absolutePdfDir = join(searchDir, pdfDir);
     try {
       logger.log("Processing: ", pdfDir);
@@ -140,7 +155,6 @@ async function main() {
     }
   }
 
-  await cache.dump();
   await Promise.all(searchIndexers.map((indexer) => indexer.dump()));
   while (true) {
     const answer = await inquirer.prompt({
@@ -153,15 +167,15 @@ async function main() {
     for (const indexer of searchIndexers) {
       const indexerName = (indexer as any).constructor.indexerType;
       console.time(indexerName);
-      const searchResults = indexer.search(searchTerm);
+      const searchResults = await indexer.search(searchTerm);
       console.timeEnd(indexerName);
       for (const result of searchResults) {
-        const pdfRawText = rawLinesToPlainText(result.content);
+        const pdfRawText = rawLinesToPlainText(JSON.parse(result.content));
         const occurences = findAllOccurences(pdfRawText, searchTerm);
         const titleOccurrences = findAllOccurences(result.title, searchTerm);
         for (const occurence of occurences) {
           logger.log(
-            chalk.magenta(result.id + ":"),
+            chalk.magenta(result.title + ":"),
             highlight(pdfRawText, occurence, searchTerm.length, 25)
           );
         }
@@ -169,5 +183,6 @@ async function main() {
       }
     }
   }
+  process.exit(0);
 }
 main();

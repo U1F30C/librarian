@@ -2,3 +2,4 @@ node_modules
 yarn-error.log
 librarian-index-*.json
 librarian-cache*.json
+librarian-cache*.db
