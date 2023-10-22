@@ -15,6 +15,7 @@ export class ElasticlunrIndexer
     const lunrIndex = Lunr(function (this) {
       this.ref("id");
 
+      this.field("id");
       this.field("title");
       this.field("content");
       // TODO: add all items on initialization caur vanilla lunr doesn't support adding them dinamically, it seems :(
@@ -42,7 +43,7 @@ export class ElasticlunrIndexer
     return Promise.all(fullDataResult);
   }
   exists(id: string): boolean {
-    this.
+    return this.lunrIndex.search(id).length > 0;
   }
   serialize() {
     return JSON.stringify(this.lunrIndex);
