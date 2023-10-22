@@ -35,7 +35,7 @@ export class ElasticlunrIndexer
   async search(query: string): Promise<IndexableFileReference[]> {
     const results = this.lunrIndex.search(query);
     const fullDataResult = results.map((result) =>
-      this.cache.getByPath(result.ref)
+      this.cache.getByHash(result.ref)
     );
     return Promise.all(fullDataResult);
   }

@@ -33,7 +33,7 @@ export class MinisearchIndexer
       fuzzy: 0.2,
     });
     const fullDataResult = results.map((result) =>
-      this.cache.getByPath(result.id)
+      this.cache.getByHash(result.id)
     );
     return Promise.all(fullDataResult);
   }

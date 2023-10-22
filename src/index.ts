@@ -46,7 +46,7 @@ async function getFileContent(
         relativePath,
         fileHash,
         {
-          id: relativePath,
+          id: fileHash,
           title: relativePath,
           content: JSON.stringify(content),
         },

@@ -44,7 +44,7 @@ export class LibrarianCache {
     await this.db.close();
   }
 
-  async getByPath(key: string): Promise<IndexableFileReference> {
+    async getByPath(key: string): Promise<IndexableFileReference<string>> {
     const query = `SELECT * FROM files WHERE path = ?`;
     const result = await this.db.get<FileDBModel>(query, key);
     if (!result) return null;
@@ -55,10 +55,10 @@ export class LibrarianCache {
     };
   }
 
-  async getByHash(hash: string, path: string): Promise<IndexableFileReference> {
+  async getByHash(hash: string, path?: string): Promise<IndexableFileReference<string>> {
     const query = `SELECT * FROM files WHERE hash = ?`;
     const result = await this.db.get<FileDBModel>(query, hash);
-    if (result && result.path !== path) {
+    if (result && path && result.path !== path) {
       await this.db.run(
         `UPDATE files SET path = ? WHERE hash = ?`,
         path,
