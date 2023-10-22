@@ -10,7 +10,9 @@ export class ElasticlunrIndexer
   static indexerType = "elasticlunr" as const;
   private elasticlunrIndex: Elasticlunr.Index<IndexableFileReference>;
   constructor(private cache: LibrarianCache, private indexPath: string) {
-    const elasticlunrIndex = Elasticlunr<IndexableFileReference>(function (this) {
+    const elasticlunrIndex = Elasticlunr<IndexableFileReference>(function (
+      this
+    ) {
       this.setRef("id");
 
       this.addField("title");

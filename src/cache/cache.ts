@@ -2,7 +2,7 @@ import { Database, open } from "sqlite";
 import sqlite3 from "sqlite3";
 import { IndexableFileReference } from "../types/pdf-file-reference";
 import { rawLinesToPlainText } from "../utils/raw-lines-to-plain-text";
-import { readPdfText as _readPdfText } from "pdf-text-reader"
+import { readPdfText as _readPdfText } from "pdf-text-reader";
 interface FileDBModel {
   id: number;
   path: string;
@@ -11,12 +11,13 @@ interface FileDBModel {
   textContent: string;
 }
 
-export function cacheToIndexableFileReference(cache: FileDBModel): IndexableFileReference<string> {
+export function cacheToIndexableFileReference(
+  cache: FileDBModel
+): IndexableFileReference<string> {
   let plainTextContent: string;
-  if(cache.mimeType === "application/pdf") {
+  if (cache.mimeType === "application/pdf") {
     plainTextContent = rawLinesToPlainText(JSON.parse(cache.textContent));
-  }
-  else {
+  } else {
     plainTextContent = cache.textContent;
   }
   return {
@@ -26,18 +27,21 @@ export function cacheToIndexableFileReference(cache: FileDBModel): IndexableFile
   };
 }
 
-
 async function readPdfText(data: Buffer) {
   const pages = await _readPdfText(data);
   return pages;
 }
 
-export async function indexableFileReferenceToCache(cache: IndexableFileReference<Buffer>, type: string): Promise<Omit<FileDBModel, "id">> {
+export async function indexableFileReferenceToCache(
+  cache: IndexableFileReference<Buffer>,
+  type: string
+): Promise<Omit<FileDBModel, "id">> {
   let textSerializedContent: string;
-  if(type === "application/pdf") {
-    textSerializedContent = await readPdfText(cache.content).then(JSON.stringify);
-  }
-  else {
+  if (type === "application/pdf") {
+    textSerializedContent = await readPdfText(cache.content).then(
+      JSON.stringify
+    );
+  } else {
     textSerializedContent = cache.content.toString();
   }
   return {
@@ -47,7 +51,6 @@ export async function indexableFileReferenceToCache(cache: IndexableFileReferenc
     textContent: textSerializedContent,
   };
 }
-
 
 // file path is used to quickly check if the file has been read
 // file hash is used to check if the file has been renamed, it is seen as the true unique identifier
@@ -90,15 +93,14 @@ export class LibrarianCache {
     return cacheToIndexableFileReference(result);
   }
 
-  async getByHash(hash: string, path?: string): Promise<IndexableFileReference> {
+  async getByHash(
+    hash: string,
+    path?: string
+  ): Promise<IndexableFileReference> {
     const query = `SELECT * FROM files WHERE hash = ?`;
     const result = await this.db.get<FileDBModel>(query, hash);
     if (result && path && result.path !== path) {
-      await this.db.run(
-        `UPDATE files SET path = ? WHERE hash = ?`,
-        path,
-        hash
-      );
+      await this.db.run(`UPDATE files SET path = ? WHERE hash = ?`, path, hash);
     }
     if (!result) return null;
     return cacheToIndexableFileReference(result);
@@ -106,8 +108,17 @@ export class LibrarianCache {
 
   async set(value: IndexableFileReference<Buffer>, mimeType: string) {
     const query = `INSERT INTO files (path, hash, textContent, mimeType) VALUES (?, ?, ?, ?)`;
-    const fileRefToInsert = await indexableFileReferenceToCache(value, mimeType);
-    await this.db.run(query, fileRefToInsert.path, fileRefToInsert.hash, fileRefToInsert.textContent, mimeType);
+    const fileRefToInsert = await indexableFileReferenceToCache(
+      value,
+      mimeType
+    );
+    await this.db.run(
+      query,
+      fileRefToInsert.path,
+      fileRefToInsert.hash,
+      fileRefToInsert.textContent,
+      mimeType
+    );
   }
 
   async unsetByPath(path: string) {
