@@ -2,7 +2,9 @@ import chalk from "chalk";
 import { dirExists, readDir } from "fs-safe";
 import inquirer from "inquirer";
 import { join } from "path";
-import { readPdfText as _readPdfText } from "pdf-text-reader";
+
+import { readFile } from "fs/promises";
+import mime from "mime-types";
 import { LibrarianCache } from "./cache/cache.ts";
 import { BaseIndexer } from "./indexers/BaseIndexer.ts";
 import { ElasticlunrIndexer } from "./indexers/ElasticlunrIndexer.ts";
@@ -10,9 +12,15 @@ import { MinisearchIndexer } from "./indexers/MinisearchIndexer.ts";
 import { SimpleMatchIndexer } from "./indexers/SimpleMatchIndexer.ts";
 import { IndexableFileReference } from "./types/pdf-file-reference";
 import { getActionSkipper } from "./utils/action-skipper.ts";
-import { logger } from "./utils/logger.ts";
 import { hash } from "./utils/hash.ts";
-import { readFile } from "fs/promises";
+import { logger } from "./utils/logger.ts";
+
+// "jpeg", "jpg", "png" coming soon
+const supportedEextensions = ["pdf", "json", "txt", "md", "html"] as const;
+const supportedEextensionsRegex = new RegExp(
+  `\.(${supportedEextensions.join("|")})$`,
+  "i"
+);
 
 let shouldExit = false;
 process.on("SIGINT", function () {
@@ -20,10 +28,6 @@ process.on("SIGINT", function () {
   logger.log("Caught interrupt signal");
 });
 
-async function readPdfText(data: Buffer) {
-  const pages = await _readPdfText(data);
-  return pages;
-}
 const actionControllers = {
   [MinisearchIndexer.indexerType]: getActionSkipper(10),
   [ElasticlunrIndexer.indexerType]: getActionSkipper(10),
@@ -37,17 +41,16 @@ async function getFileContent(
   if (!(await cache.getByPath(relativePath))) {
     logger.log(" - Cache miss: ", relativePath);
     const fileBinaryData = await readFile(absolutePath);
-    const content = await readPdfText(fileBinaryData);
     const fileHash = await hash(fileBinaryData);
-    if(!await cache.getByHash(fileHash, relativePath)) {
+    if (!(await cache.getByHash(fileHash, relativePath))) {
       logger.log("   - Backup cache key miss: ", relativePath);
       await cache.set(
         {
           id: fileHash,
           title: relativePath,
-          content: content,
+          content: fileBinaryData,
         },
-        "application/pdf",
+        mime.lookup(relativePath) ?? "application/octet-stream"
       );
     }
   }
@@ -117,17 +120,13 @@ async function main() {
   if (!(await dirExists(searchDir)))
     throw new Error("Search directory does not exist");
   const dirs = await readDir(searchDir, { recursive: true });
-  const pdfDirs = dirs!.filter((dir) => dir.endsWith(".pdf"));
+  const pdfDirs = dirs!.filter((dir) => supportedEextensionsRegex.test(dir));
   for (const pdfDir of pdfDirs) {
     if (shouldExit) process.exit(0);
     const absolutePdfDir = join(searchDir, pdfDir);
     try {
       logger.log("Processing: ", pdfDir);
-      const fileEntry = await getFileContent(
-        pdfDir,
-        absolutePdfDir,
-        cache
-      );
+      const fileEntry = await getFileContent(pdfDir, absolutePdfDir, cache);
 
       for (const indexer of searchIndexers) {
         const newIndexEntry = !indexer.exists(fileEntry.id);

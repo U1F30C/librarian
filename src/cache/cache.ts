@@ -2,8 +2,7 @@ import { Database, open } from "sqlite";
 import sqlite3 from "sqlite3";
 import { IndexableFileReference } from "../types/pdf-file-reference";
 import { rawLinesToPlainText } from "../utils/raw-lines-to-plain-text";
-import { Page } from "pdf-text-reader";
-
+import { readPdfText as _readPdfText } from "pdf-text-reader"
 interface FileDBModel {
   id: number;
   path: string;
@@ -13,19 +12,39 @@ interface FileDBModel {
 }
 
 export function cacheToIndexableFileReference(cache: FileDBModel): IndexableFileReference<string> {
+  let plainTextContent: string;
+  if(cache.mimeType === "application/pdf") {
+    plainTextContent = rawLinesToPlainText(JSON.parse(cache.textContent));
+  }
+  else {
+    plainTextContent = cache.textContent;
+  }
   return {
     id: cache.hash,
     title: cache.path,
-    content: rawLinesToPlainText(JSON.parse(cache.textContent)),
+    content: plainTextContent,
   };
 }
 
-export function indexableFileReferenceToCache(cache: IndexableFileReference<Page[]>, type: string): Omit<FileDBModel, "id"> {
+
+async function readPdfText(data: Buffer) {
+  const pages = await _readPdfText(data);
+  return pages;
+}
+
+export async function indexableFileReferenceToCache(cache: IndexableFileReference<Buffer>, type: string): Promise<Omit<FileDBModel, "id">> {
+  let textSerializedContent: string;
+  if(type === "application/pdf") {
+    textSerializedContent = await readPdfText(cache.content).then(JSON.stringify);
+  }
+  else {
+    textSerializedContent = cache.content.toString();
+  }
   return {
     path: cache.title,
     hash: cache.id,
     mimeType: type,
-    textContent: JSON.stringify(cache.content),
+    textContent: textSerializedContent,
   };
 }
 
@@ -85,9 +104,9 @@ export class LibrarianCache {
     return cacheToIndexableFileReference(result);
   }
 
-  async set(value: IndexableFileReference<Page[]>, mimeType: string) {
+  async set(value: IndexableFileReference<Buffer>, mimeType: string) {
     const query = `INSERT INTO files (path, hash, textContent, mimeType) VALUES (?, ?, ?, ?)`;
-    const fileRefToInsert = indexableFileReferenceToCache(value, mimeType);
+    const fileRefToInsert = await indexableFileReferenceToCache(value, mimeType);
     await this.db.run(query, fileRefToInsert.path, fileRefToInsert.hash, fileRefToInsert.textContent, mimeType);
   }
 
