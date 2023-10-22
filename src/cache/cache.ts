@@ -4,13 +4,13 @@ import { PdfFileReference } from "../types/pdf-file-reference";
 
 interface FileDBModel {
   id: number;
-  filePath: string;
-  fileHash: string;
+  path: string;
+  hash: string;
   textContent: string;
 }
 
-// filePath is used to quickly check if the file has been read
-// fileHash is used to check if the file has been renamed, it is seen as the true unique identifier
+// file path is used to quickly check if the file has been read
+// file hash is used to check if the file has been renamed, it is seen as the true unique identifier
 export class LibrarianCache {
   db: Database<sqlite3.Database, sqlite3.Statement>;
 
@@ -21,19 +21,19 @@ export class LibrarianCache {
       driver: sqlite3.Database,
     });
 
-    // create sqlite table with id, filePath and textContent
+    // create sqlite table with id, path and textContent
     await db.exec(`CREATE TABLE IF NOT EXISTS files (
       id INTEGER PRIMARY KEY,
-      filePath TEXT NOT NULL,
-      fileHash TEXT NOT NULL,
+      path TEXT NOT NULL,
+      hash TEXT NOT NULL,
       textContent TEXT NOT NULL
     )`);
 
     await db.exec(
-      `CREATE UNIQUE INDEX IF NOT EXISTS fileHashIndex ON files (fileHash)`
+      `CREATE UNIQUE INDEX IF NOT EXISTS hashIndex ON files (hash)`
     );
     await db.exec(
-      `CREATE UNIQUE INDEX IF NOT EXISTS filePathIndex ON files (filePath)`
+      `CREATE UNIQUE INDEX IF NOT EXISTS pathIndex ON files (path)`
     );
     this.db = db;
   }
@@ -43,46 +43,46 @@ export class LibrarianCache {
   }
 
   async getByPath(key: string): Promise<PdfFileReference> {
-    const query = `SELECT * FROM files WHERE filePath = ?`;
+    const query = `SELECT * FROM files WHERE path = ?`;
     const result = await this.db.get<FileDBModel>(query, key);
     if (!result) return null;
     return {
-      id: result.fileHash,
-      title: result.filePath,
+      id: result.hash,
+      title: result.path,
       content: result.textContent,
     };
   }
 
   async getByHash(hash: string, path: string): Promise<PdfFileReference> {
-    const query = `SELECT * FROM files WHERE fileHash = ?`;
+    const query = `SELECT * FROM files WHERE hash = ?`;
     const result = await this.db.get<FileDBModel>(query, hash);
-    if (result && result.filePath !== path) {
+    if (result && result.path !== path) {
       await this.db.run(
-        `UPDATE files SET filePath = ? WHERE fileHash = ?`,
+        `UPDATE files SET path = ? WHERE hash = ?`,
         path,
         hash
       );
     }
     if (!result) return null;
     return {
-      id: result.fileHash,
-      title: result.filePath,
+      id: result.hash,
+      title: result.path,
       content: result.textContent,
     };
   }
 
   async set(path: string, hash: string, value: PdfFileReference<string>) {
-    const query = `INSERT INTO files (filePath, fileHash, textContent) VALUES (?, ?, ?)`;
+    const query = `INSERT INTO files (path, hash, textContent) VALUES (?, ?, ?)`;
     await this.db.run(query, path, hash, value.content);
   }
 
   async unsetByPath(path: string) {
-    const query = `DELETE FROM files WHERE filePath = ?`;
+    const query = `DELETE FROM files WHERE path = ?`;
     await this.db.run(query, path);
   }
 
   unsetByHash(hash: string) {
-    const query = `DELETE FROM files WHERE fileHash = ?`;
+    const query = `DELETE FROM files WHERE hash = ?`;
     this.db.run(query, hash);
   }
 
@@ -92,7 +92,7 @@ export class LibrarianCache {
 
   async getGhostKeys(actualKeys: string[]) {
     return await this.db.all(
-      `SELECT * FROM files WHERE filePath NOT IN (?)`,
+      `SELECT * FROM files WHERE path NOT IN (?)`,
       actualKeys
     );
   }
