@@ -54,7 +54,7 @@ async function getFileContent(
     }
   }
   const fileReference = await cache.getByPath(relativePath);
-  return fileReference.content;
+  return fileReference;
 }
 
 function findAllOccurences(text: string, query: string): number[] {
@@ -106,8 +106,8 @@ async function main() {
     join(workDir, `librarian-index-${SimpleMatchIndexer.indexerType}.json`)
   );
   const searchIndexers: BaseIndexer<IndexableFileReference>[] = [
-    elasticLunrIndexer,
-    // minisearchIndexer,
+    // elasticLunrIndexer,
+    minisearchIndexer,
     // simpleMatchIndexer,
   ];
   logger.log("Loading indexers");
@@ -169,7 +169,7 @@ async function main() {
       const searchResults = await indexer.search(searchTerm);
       console.timeEnd(indexerName);
       for (const result of searchResults) {
-        const fileRef = result.content;
+        const fileRef = result as IndexableFileReference<string>;
         const occurences = findAllOccurences(fileRef.content, searchTerm);
         const titleOccurrences = findAllOccurences(result.title, searchTerm);
         for (const occurence of occurences) {
