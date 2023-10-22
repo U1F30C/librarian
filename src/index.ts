@@ -11,7 +11,6 @@ import { SimpleMatchIndexer } from "./indexers/SimpleMatchIndexer.ts";
 import { IndexableFileReference } from "./types/pdf-file-reference";
 import { getActionSkipper } from "./utils/action-skipper.ts";
 import { logger } from "./utils/logger.ts";
-import { rawLinesToPlainText } from "./utils/raw-lines-to-plain-text.ts";
 import { hash } from "./utils/hash.ts";
 import { readFile } from "fs/promises";
 
@@ -34,7 +33,7 @@ async function getFileContent(
   relativePath: string,
   absolutePath: string,
   cache: LibrarianCache
-) {
+): Promise<IndexableFileReference> {
   if (!(await cache.getByPath(relativePath))) {
     logger.log(" - Cache miss: ", relativePath);
     const fileBinaryData = await readFile(absolutePath);
@@ -55,7 +54,7 @@ async function getFileContent(
     }
   }
   const fileReference = await cache.getByPath(relativePath);
-  return rawLinesToPlainText(JSON.parse(fileReference.content));
+  return fileReference.content;
 }
 
 function findAllOccurences(text: string, query: string): number[] {
@@ -126,16 +125,11 @@ async function main() {
     const absolutePdfDir = join(searchDir, pdfDir);
     try {
       logger.log("Processing: ", pdfDir);
-      const pdfText: string = await getFileContent(
+      const fileEntry = await getFileContent(
         pdfDir,
         absolutePdfDir,
         cache
       );
-      const fileEntry: IndexableFileReference = {
-        id: pdfDir,
-        title: pdfDir,
-        content: pdfText,
-      };
 
       for (const indexer of searchIndexers) {
         const newIndexEntry = !indexer.exists(fileEntry.id);
@@ -175,13 +169,13 @@ async function main() {
       const searchResults = await indexer.search(searchTerm);
       console.timeEnd(indexerName);
       for (const result of searchResults) {
-        const pdfRawText = rawLinesToPlainText(JSON.parse(result.content));
-        const occurences = findAllOccurences(pdfRawText, searchTerm);
+        const fileRef = result.content;
+        const occurences = findAllOccurences(fileRef.content, searchTerm);
         const titleOccurrences = findAllOccurences(result.title, searchTerm);
         for (const occurence of occurences) {
           logger.log(
             chalk.magenta(result.title + ":"),
-            highlight(pdfRawText, occurence, searchTerm.length, 25)
+            highlight(fileRef.content, occurence, searchTerm.length, 25)
           );
         }
         if (titleOccurrences.length > 0) console.log(chalk.blue(result.title));

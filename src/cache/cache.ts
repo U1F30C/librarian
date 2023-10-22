@@ -1,6 +1,7 @@
 import { Database, open } from "sqlite";
 import sqlite3 from "sqlite3";
 import { IndexableFileReference } from "../types/pdf-file-reference";
+import { rawLinesToPlainText } from "../utils/raw-lines-to-plain-text";
 
 interface FileDBModel {
   id: number;
@@ -8,6 +9,14 @@ interface FileDBModel {
   hash: string;
   mimeType: string;
   textContent: string;
+}
+
+export function cacheToIndexableFileReference(cache: FileDBModel): IndexableFileReference {
+  return {
+    id: cache.hash,
+    title: cache.path,
+    content: rawLinesToPlainText(JSON.parse(cache.textContent)),
+  };
 }
 
 // file path is used to quickly check if the file has been read
@@ -44,18 +53,14 @@ export class LibrarianCache {
     await this.db.close();
   }
 
-    async getByPath(key: string): Promise<IndexableFileReference<string>> {
+    async getByPath(key: string): Promise<IndexableFileReference> {
     const query = `SELECT * FROM files WHERE path = ?`;
     const result = await this.db.get<FileDBModel>(query, key);
     if (!result) return null;
-    return {
-      id: result.hash,
-      title: result.path,
-      content: result.textContent,
-    };
+    return cacheToIndexableFileReference(result);
   }
 
-  async getByHash(hash: string, path?: string): Promise<IndexableFileReference<string>> {
+  async getByHash(hash: string, path?: string): Promise<IndexableFileReference> {
     const query = `SELECT * FROM files WHERE hash = ?`;
     const result = await this.db.get<FileDBModel>(query, hash);
     if (result && path && result.path !== path) {
@@ -66,11 +71,7 @@ export class LibrarianCache {
       );
     }
     if (!result) return null;
-    return {
-      id: result.hash,
-      title: result.path,
-      content: result.textContent,
-    };
+    return cacheToIndexableFileReference(result);
   }
 
   async set(path: string, hash: string, value: IndexableFileReference<string>, mimeType: string) {
