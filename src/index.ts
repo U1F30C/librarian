@@ -1,4 +1,3 @@
-import chalk from "chalk";
 import { dirExists, readDir } from "fs-safe";
 import inquirer from "inquirer";
 import { join } from "path";
@@ -14,6 +13,12 @@ import { IndexableFileReference } from "./types/pdf-file-reference";
 import { getActionSkipper } from "./utils/action-skipper.ts";
 import { hash } from "./utils/hash.ts";
 import { logger } from "./utils/logger.ts";
+import {
+  findAllOccurences,
+  highlightTitleOccurrences,
+  highlightWithContext,
+  hightlightSeparator,
+} from "./utils/result-reporting.ts";
 
 // "jpeg", "jpg", "png" coming soon
 const supportedEextensions = ["pdf", "json", "txt", "md", "html"] as const;
@@ -57,32 +62,6 @@ async function getFileContent(
   const fileReference = await cache.getByPath(relativePath);
   return fileReference;
 }
-
-function findAllOccurences(text: string, query: string): number[] {
-  const result: number[] = [];
-  text = text.toLowerCase();
-  query = query.toLowerCase();
-  let startIndex = text.indexOf(query);
-  while (startIndex !== -1) {
-    result.push(startIndex);
-    startIndex = text.indexOf(query, startIndex + 1);
-  }
-  return result;
-}
-
-const highlight = (
-  text: string,
-  startIndex: number,
-  queryLength: number,
-  padding: number
-) => {
-  const endIndex = startIndex + queryLength;
-  const result =
-    text.substring(Math.max(0, startIndex - padding), startIndex) +
-    chalk.redBright(text.substring(startIndex, endIndex)) +
-    text.substring(endIndex, endIndex + padding);
-  return result;
-};
 
 async function main() {
   console.log(process.argv);
@@ -166,16 +145,21 @@ async function main() {
       const searchResults = await indexer.search(searchTerm);
       console.timeEnd(indexerName);
       for (const result of searchResults) {
-        const fileRef = result as IndexableFileReference<string>;
-        const occurences = findAllOccurences(fileRef.content, searchTerm);
+        const occurences = findAllOccurences(result.content, searchTerm);
         const titleOccurrences = findAllOccurences(result.title, searchTerm);
         for (const occurence of occurences) {
           logger.log(
-            chalk.magenta(result.title + ":"),
-            highlight(fileRef.content, occurence, searchTerm.length, 25)
+            hightlightSeparator(result.title),
+            highlightWithContext(
+              result.content,
+              occurence,
+              searchTerm.length,
+              25
+            )
           );
         }
-        if (titleOccurrences.length > 0) console.log(chalk.blue(result.title));
+        if (titleOccurrences.length > 0)
+          console.log(highlightTitleOccurrences(result.title));
       }
     }
   }
