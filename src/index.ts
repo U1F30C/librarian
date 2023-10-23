@@ -19,9 +19,9 @@ import {
   highlightWithContext,
   hightlightSeparator,
 } from "./utils/result-reporting.ts";
+import { singletonOcrRef } from "./utils/ocr.ts";
 
-// "jpeg", "jpg", "png" coming soon
-const supportedEextensions = ["pdf", "json", "txt", "md", "html"] as const;
+const supportedEextensions = ["pdf", "json", "txt", "md", "html", "jpeg", "jpg", "png" ] as const;
 const supportedEextensionsRegex = new RegExp(
   `\.(${supportedEextensions.join("|")})$`,
   "i"
@@ -55,7 +55,7 @@ async function getFileContent(
           title: relativePath,
           content: fileBinaryData,
         },
-        mime.lookup(relativePath) ?? "application/octet-stream"
+        mime.lookup(relativePath) as string ?? "application/octet-stream"
       );
     }
   }
@@ -70,6 +70,7 @@ async function main() {
   const workDir = ".";
   const cacheFileName = "librarian-cache.db";
   const cachePath = join(workDir, cacheFileName);
+  await singletonOcrRef.initialize()
   const cache = new LibrarianCache(cachePath);
   logger.log("Loading cache");
   await cache.load();
@@ -101,7 +102,7 @@ async function main() {
   const dirs = await readDir(searchDir, { recursive: true });
   const pdfDirs = dirs!.filter((dir) => supportedEextensionsRegex.test(dir));
   for (const pdfDir of pdfDirs) {
-    if (shouldExit) process.exit(0);
+    if (shouldExit) break;
     const absolutePdfDir = join(searchDir, pdfDir);
     try {
       logger.log("Processing: ", pdfDir);
@@ -131,7 +132,7 @@ async function main() {
   }
 
   await Promise.all(searchIndexers.map((indexer) => indexer.dump()));
-  while (true) {
+  while (!shouldExit) {
     const answer = await inquirer.prompt({
       type: "input",
       name: "searchTerm",

@@ -3,6 +3,8 @@ import sqlite3 from "sqlite3";
 import { IndexableFileReference } from "../types/pdf-file-reference";
 import { rawLinesToPlainText } from "../utils/raw-lines-to-plain-text";
 import { readPdfText as _readPdfText } from "pdf-text-reader";
+import { singletonOcrRef } from "../utils/ocr";
+
 interface FileDBModel {
   id: number;
   path: string;
@@ -17,7 +19,7 @@ export function cacheToIndexableFileReference(
   let plainTextContent: string;
   if (cache.mimeType === "application/pdf") {
     plainTextContent = rawLinesToPlainText(JSON.parse(cache.textContent));
-  } else {
+  } else if (["image/jpeg", "image/png"].includes(cache.mimeType)) {
     plainTextContent = cache.textContent;
   }
   return {
@@ -41,6 +43,11 @@ export async function indexableFileReferenceToCache(
     textSerializedContent = await readPdfText(cache.content).then(
       JSON.stringify
     );
+  } else if (["image/jpeg", "image/png"].includes(type)) {
+    const worker = singletonOcrRef.worker;
+    const ocrResult = await worker.recognize(cache.content);
+    textSerializedContent = ocrResult.data.text;
+  
   } else {
     textSerializedContent = cache.content.toString();
   }

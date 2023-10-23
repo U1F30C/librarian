@@ -4,3 +4,4 @@ librarian-index-*.json
 librarian-cache*.json
 librarian-cache*.db
 test_files
+eng.traineddata
