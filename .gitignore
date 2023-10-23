@@ -3,3 +3,4 @@ yarn-error.log
 librarian-index-*.json
 librarian-cache*.json
 librarian-cache*.db
+test_files
