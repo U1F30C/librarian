@@ -21,6 +21,8 @@ export function cacheToIndexableFileReference(
     plainTextContent = rawLinesToPlainText(JSON.parse(cache.textContent));
   } else if (["image/jpeg", "image/png"].includes(cache.mimeType)) {
     plainTextContent = cache.textContent;
+  } else {
+    plainTextContent = cache.textContent;
   }
   return {
     id: cache.hash,
