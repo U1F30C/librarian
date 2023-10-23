@@ -13,11 +13,11 @@ export function findAllOccurences(text: string, query: string): number[] {
 }
 
 export const hightlightSeparator = (title: string) => {
-  chalk.magenta(title + ":");
+  return chalk.magenta(title + ":");
 };
 
 export const highlightTitleOccurrences = (title: string) => {
-  chalk.blue(title);
+  return chalk.blue(title);
 };
 
 export const highlightWithContext = (
