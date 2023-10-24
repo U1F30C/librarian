@@ -46,11 +46,11 @@ export class SimpleMatchIndexer
   exists(id: string): boolean {
     return !!this.cache.getByPath(id);
   }
-  serialize(): string {
+  async serialize(): Promise<string> {
     throw new Error("Not implemented");
     return "";
   }
-  deserialize(indexJson: string) {
+  async deserialize(indexJson: string) {
     throw new Error("Not implemented");
   }
   async load() {

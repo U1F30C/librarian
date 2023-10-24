@@ -5,8 +5,8 @@ export interface BaseIndexer<T> {
   search(query: string): Promise<T[]>;
   exists(id: string): boolean;
 
-  serialize(): string;
-  deserialize(indexJson: string): void;
+  serialize(): Promise<string | Buffer>;
+  deserialize(indexJson: string | Buffer): Promise<void>;
   load(): Promise<void>;
   dump(): Promise<void>;
 }

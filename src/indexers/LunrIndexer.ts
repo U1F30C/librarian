@@ -45,7 +45,7 @@ export class ElasticlunrIndexer
   exists(id: string): boolean {
     return this.lunrIndex.search(id).length > 0;
   }
-  serialize() {
+  async serialize() {
     return JSON.stringify(this.lunrIndex);
   }
   async deserialize(indexJson: string) {
@@ -57,6 +57,6 @@ export class ElasticlunrIndexer
     }
   }
   async dump() {
-    await writeFile(this.indexPath, this.serialize());
+    await writeFile(this.indexPath, await this.serialize());
   }
 }

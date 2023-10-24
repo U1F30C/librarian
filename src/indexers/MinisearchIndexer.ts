@@ -3,6 +3,7 @@ import Minisearch from "minisearch";
 import { LibrarianCache } from "../cache/cache";
 import { IndexableFileReference } from "../types/pdf-file-reference";
 import { BaseIndexer } from "./BaseIndexer";
+import { JSONSerializer } from "../utils/json-serializers";
 
 export class MinisearchIndexer
   implements BaseIndexer<IndexableFileReference<string>>
@@ -40,18 +41,19 @@ export class MinisearchIndexer
   exists(id: string): boolean {
     return this.minisearchEngine.has(id);
   }
-  serialize(): string {
-    return JSON.stringify(this.minisearchEngine);
+  async serialize(): Promise<Buffer | string> { 
+    return JSONSerializer.serialize(this.minisearchEngine.toJSON());
   }
-  deserialize(indexJson: string) {
-    this.minisearchEngine = Minisearch.loadJSON(indexJson, this.config);
+  async deserialize(indexJson: Buffer) {
+    const deserializedData = await JSONSerializer.deserialize(indexJson);
+    this.minisearchEngine = Minisearch.loadJS(deserializedData, this.config);
   }
   async load() {
     if (await fileExists(this.indexPath)) {
-      this.deserialize(await readFile(this.indexPath));
+      await this.deserialize(await readFile(this.indexPath, {buffer: true}));
     }
   }
   async dump() {
-    await writeFile(this.indexPath, this.serialize());
+    await writeFile(this.indexPath, await this.serialize());
   }
 }

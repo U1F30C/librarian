@@ -29,11 +29,11 @@ export class TrieSearchIndexer implements BaseIndexer<IndexableFileReference> {
   put(id: string, item: IndexableFileReference): void {
     throw new Error("Not implemented");
   }
-  serialize() {
+  async serialize() {
     throw new Error("Not implemented");
     return "";
   }
-  deserialize(indexJson) {
+  async deserialize(indexJson) {
     throw new Error("Not implemented");
   }
   async load() {

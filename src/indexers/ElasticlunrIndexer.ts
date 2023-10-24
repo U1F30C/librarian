@@ -41,7 +41,7 @@ export class ElasticlunrIndexer
   exists(id: string): boolean {
     return this.elasticlunrIndex.documentStore.hasDoc(id);
   }
-  serialize() {
+  async serialize() {
     return JSON.stringify(this.elasticlunrIndex);
   }
   async deserialize(indexJson: string) {
@@ -49,10 +49,10 @@ export class ElasticlunrIndexer
   }
   async load() {
     if (await fileExists(this.indexPath)) {
-      this.deserialize(await readFile(this.indexPath));
+      await this.deserialize(await readFile(this.indexPath));
     }
   }
   async dump() {
-    await writeFile(this.indexPath, this.serialize());
+    await writeFile(this.indexPath, await this.serialize());
   }
 }
