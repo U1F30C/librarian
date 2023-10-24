@@ -46,13 +46,15 @@ async function getFileContent(
   absolutePath: string,
   cache: LibrarianCache
 ): Promise<IndexableFileReference> {
-  if (!(await cache.getByPath(relativePath))) {
+  let fileReference: IndexableFileReference<string> = await cache.getByPath(relativePath);
+  if (!fileReference) {
     logger.log(" - Cache miss: ", relativePath);
     const fileBinaryData = await readFile(absolutePath);
     const fileHash = await hash(fileBinaryData);
-    if (!(await cache.getByHash(fileHash, relativePath))) {
+    fileReference = await cache.getByHash(fileHash, relativePath);
+    if (!fileReference) {
       logger.log("   - Backup cache key miss: ", relativePath);
-      await cache.set(
+      fileReference = await cache.set(
         {
           id: fileHash,
           title: relativePath,
@@ -62,7 +64,6 @@ async function getFileContent(
       );
     }
   }
-  const fileReference = await cache.getByPath(relativePath);
   return fileReference;
 }
 

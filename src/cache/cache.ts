@@ -14,7 +14,7 @@ interface FileDBModel {
 }
 
 export function cacheToIndexableFileReference(
-  cache: FileDBModel
+  cache: Omit<FileDBModel, "id">
 ): IndexableFileReference<string> {
   let plainTextContent: string;
   if (cache.mimeType === "application/pdf") {
@@ -129,6 +129,7 @@ export class LibrarianCache {
       fileRefToInsert.textContent,
       mimeType
     );
+    return cacheToIndexableFileReference(fileRefToInsert);
   }
 
   async unsetByPath(path: string) {
