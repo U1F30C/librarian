@@ -28,6 +28,7 @@ export function cacheToIndexableFileReference(
     id: cache.hash,
     title: cache.path,
     content: plainTextContent,
+    mimeType: cache.mimeType,
   };
 }
 
