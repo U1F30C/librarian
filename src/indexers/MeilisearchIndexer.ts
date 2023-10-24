@@ -31,11 +31,9 @@ export class MeiliSearchIndexer
   }
   async search(query: string): Promise<IndexableFileReference[]> {
     const results = await this.index.search(query).then((result) => result.hits);
-    console.log(results);
     const fullDataResult = results.map((result) =>
       (this.cache.getByHash(result.id))
     );
-    console.log(await Promise.all(fullDataResult));
     return Promise.all(fullDataResult);
   }
   async exists(id: string): Promise<boolean> {
