@@ -20,6 +20,7 @@ import {
   hightlightSeparator,
 } from "./utils/result-reporting.ts";
 import { singletonOcrRef } from "./utils/ocr.ts";
+import { FlexSearchIndexer } from "./indexers/FlexsearchIndexer.ts";
 
 const supportedEextensions = ["pdf", "json", "txt", "md", "html", "jpeg", "jpg", "png" ] as const;
 const supportedEextensionsRegex = new RegExp(
@@ -34,7 +35,8 @@ process.on("SIGINT", function () {
 });
 
 const actionControllers = {
-  [MinisearchIndexer.indexerType]: getActionSkipper(10),
+  [FlexSearchIndexer.indexerType]: getActionSkipper(100),
+  [MinisearchIndexer.indexerType]: getActionSkipper(100),
   [ElasticlunrIndexer.indexerType]: getActionSkipper(10),
 } as const;
 
@@ -64,8 +66,7 @@ async function getFileContent(
 }
 
 async function main() {
-  console.log(process.argv);
-  const searchDir = process.argv[3] ?? ".";
+  const searchDir = process.argv[4] ?? ".";
   logger.log("Root search dir: ", searchDir);
   const workDir = ".";
   const cacheFileName = "librarian-cache.db";
@@ -86,9 +87,14 @@ async function main() {
     cache,
     join(workDir, `librarian-index-${SimpleMatchIndexer.indexerType}.json`)
   );
+  const flexSearchIndexer = new FlexSearchIndexer(
+    cache,
+    join(workDir, `librarian-index-${FlexSearchIndexer.indexerType}.json`)
+  );
   const searchIndexers: BaseIndexer<IndexableFileReference>[] = [
+    flexSearchIndexer,
     // elasticLunrIndexer,
-    minisearchIndexer,
+    // minisearchIndexer,
     // simpleMatchIndexer,
   ];
   logger.log("Loading indexers");
@@ -160,7 +166,7 @@ async function main() {
           );
         }
         if (titleOccurrences.length > 0)
-          console.log(highlightTitleOccurrences(result.title));
+          logger.log(highlightTitleOccurrences(result.title));
       }
     }
   }
