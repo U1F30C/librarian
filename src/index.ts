@@ -21,6 +21,7 @@ import {
 } from "./utils/result-reporting.ts";
 import { singletonOcrRef } from "./utils/ocr.ts";
 import { FlexSearchIndexer } from "./indexers/FlexsearchIndexer.ts";
+import { MeiliSearchIndexer } from "./indexers/MeilisearchIndexer.ts";
 
 const supportedEextensions = ["pdf", "json", "txt", "md", "html", "jpeg", "jpg", "png" ] as const;
 const supportedEextensionsRegex = new RegExp(
@@ -91,8 +92,12 @@ async function main() {
     cache,
     join(workDir, `librarian-index-${FlexSearchIndexer.indexerType}.json`)
   );
+  const meilisearch = new MeiliSearchIndexer(
+    cache,
+    join(workDir, `librarian-index-${MeiliSearchIndexer.indexerType}.json`)
+  );
   const searchIndexers: BaseIndexer<IndexableFileReference>[] = [
-    flexSearchIndexer,
+    meilisearch,
     // elasticLunrIndexer,
     // minisearchIndexer,
     // simpleMatchIndexer,
@@ -115,14 +120,14 @@ async function main() {
       const fileEntry = await getFileContent(pdfDir, absolutePdfDir, cache);
 
       for (const indexer of searchIndexers) {
-        const newIndexEntry = !indexer.exists(fileEntry.id);
+        const newIndexEntry = !await indexer.exists(fileEntry.id);
         if (newIndexEntry) {
           logger.log(" - New index entry, indexing");
 
-          indexer.add(fileEntry);
+          await indexer.add(fileEntry);
           const indexerName = (indexer as any).constructor.indexerType;
-          actionControllers[indexerName].step();
-          if (actionControllers[indexerName].shouldAct()) {
+          actionControllers[indexerName]?.step();
+          if (actionControllers[indexerName]?.shouldAct()) {
             logger.log(" ---------------------- Writting index");
             await indexer.dump();
           }

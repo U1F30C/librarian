@@ -4,9 +4,9 @@ It will:
 - Scan a directory for pdf files
 - Extract plain text from files using `pdf-text-reader`
 - Search using either (or various) of the following:
+  - Meilisearch
   - Elasticlunr
   - Minisearch
-  - Simple match searcher (I think it's broken lol)
   - Others todo (don't do triesearch, index is too big)
 - Keep a cache of the file contents and indexes and keep file hash to detect renamings to avoid reprocessing files
 - Highlight all of the occurrences of the search term

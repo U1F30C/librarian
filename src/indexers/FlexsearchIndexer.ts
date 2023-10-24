@@ -20,7 +20,7 @@ export class FlexSearchIndexer implements BaseIndexer<IndexableFileReference<str
       },
     });
   }
-  add(item: IndexableFileReference) {
+  async add(item: IndexableFileReference) {
     if (!this.exists(item.id)) {
       const now = Date.now();
       this.actualIdToIndexId[item.id] = now;
@@ -30,12 +30,12 @@ export class FlexSearchIndexer implements BaseIndexer<IndexableFileReference<str
       });
     }
   }
-  remove(id: string) {
+  async remove(id: string) {
     this.index.remove(this.actualIdToIndexId[id] as any);
     delete this.actualIdToIndexId[id];
   }
-  put(id: string, item: IndexableFileReference) {
-    return this.index.update(this.actualIdToIndexId[id], {
+  async put(id: string, item: IndexableFileReference) {
+    this.index.update(this.actualIdToIndexId[id], {
       ...item,
       id: this.actualIdToIndexId[id],
     });
@@ -47,7 +47,7 @@ export class FlexSearchIndexer implements BaseIndexer<IndexableFileReference<str
     );
     return Promise.all(fullDataResult);
   }
-  exists(id: string): boolean {
+  async exists(id: string): Promise<boolean> {
     return !!this.actualIdToIndexId[id];
   }
   async serialize() {
@@ -65,7 +65,7 @@ export class FlexSearchIndexer implements BaseIndexer<IndexableFileReference<str
     const deserializedData = await JSON.parse(indexJson);
     this.actualIdToIndexId = deserializedData.actualIdToIndexId;
     this.indexIdToActualId = deserializedData.indexIdToActualId;
-    console.log((this.index as any).prototype)
+    console.log((this.index as any).prototype);
     Object.keys(deserializedData).forEach((key) => {
       this.index = (this.index.import as any)(key, deserializedData[key]);
     });

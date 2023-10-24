@@ -11,14 +11,14 @@ export class SimpleMatchIndexer
   constructor(cache: LibrarianCache, private indexPath: string) {
     // this.cache = cache.clone();
   }
-  add(item: any): void {
+  async add(item: any) {
     // assume this is unnecessary
   }
-  remove(id: string): void {
+  async remove(id: string) {
     // the originalcache might keep ghost keys but they should be ignored in the search
     // this.cache.unset(id);
   }
-  put(id: string, item: any): void {
+  async put(id: string, item: any) {
     // assume this is unnecessary
   }
   async search(query: string): Promise<IndexableFileReference[]> {
@@ -43,7 +43,7 @@ export class SimpleMatchIndexer
     });
     return results.map(([key, value]) => value);
   }
-  exists(id: string): boolean {
+  async exists(id: string) {
     return !!this.cache.getByPath(id);
   }
   async serialize(): Promise<string> {

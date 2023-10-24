@@ -21,13 +21,13 @@ export class ElasticlunrIndexer
     });
     this.elasticlunrIndex = elasticlunrIndex;
   }
-  add(item: IndexableFileReference) {
+  async add(item: IndexableFileReference) {
     if (!this.exists(item.id)) this.elasticlunrIndex.addDoc(item);
   }
-  remove(id: string) {
+  async remove(id: string) {
     this.elasticlunrIndex.removeDocByRef(id);
   }
-  put(id: string, item: IndexableFileReference) {
+  async put(id: string, item: IndexableFileReference) {
     if (this.exists(id)) this.remove(id);
     this.add(item);
   }
@@ -38,7 +38,7 @@ export class ElasticlunrIndexer
     );
     return Promise.all(fullDataResult);
   }
-  exists(id: string): boolean {
+  async exists(id: string) {
     return this.elasticlunrIndex.documentStore.hasDoc(id);
   }
   async serialize() {

@@ -18,13 +18,13 @@ export class MinisearchIndexer
     const minisearchEngine = new Minisearch(this.config);
     this.minisearchEngine = minisearchEngine;
   }
-  add(item: IndexableFileReference): void {
+  async add(item: IndexableFileReference) {
     if (!this.exists(item.id)) this.minisearchEngine.add(item);
   }
-  remove(id: string): void {
+  async remove(id: string) {
     this.minisearchEngine.remove({ id });
   }
-  put(id: string, item: IndexableFileReference): void {
+  async put(id: string, item: IndexableFileReference){
     if (this.exists(id)) this.remove(id);
     this.add(item);
   }
@@ -38,7 +38,7 @@ export class MinisearchIndexer
     );
     return Promise.all(fullDataResult);
   }
-  exists(id: string): boolean {
+  async exists(id: string){
     return this.minisearchEngine.has(id);
   }
   async serialize(): Promise<Buffer | string> { 

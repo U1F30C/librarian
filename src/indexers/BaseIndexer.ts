@@ -1,9 +1,9 @@
 export interface BaseIndexer<T> {
-  add(item: T): void;
-  remove(id: string): void;
-  put(id: string, item: T): void;
+  add(item: T): Promise<void>;
+  remove(id: string): Promise<void>;
+  put(id: string, item: T): Promise<void>;
   search(query: string): Promise<T[]>;
-  exists(id: string): boolean;
+  exists(id: string): Promise<boolean>;
 
   serialize(): Promise<string | Buffer>;
   deserialize(indexJson: string | Buffer): Promise<void>;
