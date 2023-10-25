@@ -20,16 +20,16 @@ export class MeiliSearchIndexer
     });
 
   }
-  async add(item: any): Promise<void> {
+  async add(item: IndexableFileReference<string>): Promise<void> {
     await this.index.addDocuments([item]);
   }
   async remove(id: string): Promise<void> {
     await this.index.deleteDocument(id);
   }
-  async put(id: string, item: any): Promise<void> {
+  async put(id: string, item: IndexableFileReference<string>): Promise<void> {
     await this.index.updateDocuments([item]);
   }
-  async search(query: string): Promise<IndexableFileReference[]> {
+  async search(query: string): Promise<IndexableFileReference<string>[]> {
     const results = await this.index.search(query).then((result) => result.hits);
     const fullDataResult = results.map((result) =>
       (this.cache.getByHash(result.id))
