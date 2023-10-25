@@ -67,7 +67,7 @@ export async function indexableFileReferenceToCache(
 export class LibrarianCache {
   db: Database<sqlite3.Database, sqlite3.Statement>;
 
-  constructor(private cachePath: string) {}
+  constructor(private cachePath: string, private updatePathOnHashMatch = false) {}
   async load() {
     const db = await open({
       filename: this.cachePath,
@@ -110,7 +110,9 @@ export class LibrarianCache {
     const query = `SELECT * FROM files WHERE hash = ?`;
     const result = await this.db.get<FileDBModel>(query, hash);
     if (result && path && result.path !== path) {
-      await this.db.run(`UPDATE files SET path = ? WHERE hash = ?`, path, hash);
+      // to detect file renames, we update the path if the hash matches
+      if(this.updatePathOnHashMatch)
+        await this.db.run(`UPDATE files SET path = ? WHERE hash = ?`, path, hash);
     }
     if (!result) return null;
     return cacheToIndexableFileReference(result);
