@@ -88,8 +88,8 @@ async function main() {
       logger.log("Processing: ", pdfDir);
       const fileEntry = await getFileContent(pdfDir, absolutePdfDir, cache);
 
-      const newIndexEntry = !(await indexer.exists(fileEntry.id));
-      if (newIndexEntry) {
+      const entryExists = await indexer.exists(fileEntry.id);
+      if (!entryExists) {
         logger.log(" - New index entry, indexing");
 
         await indexer.add(fileEntry);
