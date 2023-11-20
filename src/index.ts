@@ -83,11 +83,12 @@ async function main() {
     throw new Error("Search directory does not exist");
   const dirs = await readDir(searchDir, { recursive: true });
   const pdfDirs = dirs!.filter((dir) => supportedEextensionsRegex.test(dir));
+  let i = 0;
   for (const pdfDir of pdfDirs) {
     if (shouldExit) break;
     const absolutePdfDir = join(searchDir, pdfDir);
     try {
-      logger.log("Processing: ", pdfDir);
+      logger.log(`${++i}/${pdfDirs.length} - Processing: `, pdfDir);
       const fileEntry = await getFileContent(pdfDir, absolutePdfDir, cache);
 
       const entryExists = await indexer.exists(fileEntry.id);
