@@ -59,7 +59,9 @@ async function getFileContent(
 }
 
 async function main() {
-  const searchDir = process.argv[4] ?? ".";
+  const searchDir = process.argv[4];
+  if (!searchDir) throw new Error("Missing search directory");
+
   logger.log("Root search dir: ", searchDir);
   const workDir = ".";
   const cacheFileName = "librarian-cache.db";
