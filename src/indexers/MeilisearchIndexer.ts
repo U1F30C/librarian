@@ -35,7 +35,7 @@ export class MeiliSearchIndexer
     return this.index
       .getDocument(id)
       .then((result) => {
-        return result.hits.length > 0;
+        return !!result;
       }).catch(() => false);
   }
   async serialize(): Promise<string> {
