@@ -2,9 +2,10 @@
 Tool assembled from a few different packages to quickly search pdfs files
 It will:
 - Scan a directory for pdf, text or image files
-- Extract plain text from files using `pdf-text-reader` and `tesseract.js`
-- Search using meilisearch engine
 - Keep a cache of the file contents and indexes and keep file hash to detect renamings to avoid reprocessing files (doesn't account for duplicate files)
+- Extract plain text from files using `pdf-text-reader` and `tesseract.js`
+- Index extracted text
+- Allow searching meilisearch engine
 - Highlight all of the occurrences of the search term
 
 ## Inspiration
@@ -13,9 +14,6 @@ I wanted to search in a bunch of pdf files, quickly. I used to use pdfgrep but t
 ## Todo:
 - Remove ghost keys from index, the search should not include missing files based on the cached index.
   - Also, I suggest not removing them from the text cache since they can be later used if the file is found again (related to the first point)
-- Implement a unifying indexer to hide the use of multiple indexers and unify the search
-- Implement the lunr search tool and test its performance
-- Try a custom index
 
 ## Notes
  - The elasticlunr index hit the max callstack while being serialized. I reckon it'd hit it again evantuaally if I just try to increase the limit so that's deprecated.
