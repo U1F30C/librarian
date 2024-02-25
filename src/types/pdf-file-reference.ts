@@ -4,3 +4,6 @@ export interface IndexableFileReference<Content = any> {
   content: Content;
   mimeType: string;
 }
+
+export type InsertionIndexableFileReference = IndexableFileReference<Buffer>;
+export type SearchIndexableFileReference = IndexableFileReference<string>;

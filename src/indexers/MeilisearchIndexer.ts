@@ -1,5 +1,5 @@
 import { LibrarianCache } from "../cache/cache";
-import { IndexableFileReference } from "../types/pdf-file-reference";
+import { SearchIndexableFileReference } from "../types/pdf-file-reference";
 import { rawLinesToPlainText } from "../utils/raw-lines-to-plain-text";
 import { BaseIndexer } from "./BaseIndexer";
 
@@ -7,7 +7,7 @@ import { MeiliSearch, Index } from 'meilisearch'
 
 
 export class MeiliSearchIndexer
-  implements BaseIndexer<IndexableFileReference<string>>
+  implements BaseIndexer<SearchIndexableFileReference>
 {
   static indexerType = "meilisearch";
   private client: MeiliSearch;
@@ -20,16 +20,16 @@ export class MeiliSearchIndexer
     });
 
   }
-  async add(item: IndexableFileReference<string>): Promise<void> {
+  async add(item: SearchIndexableFileReference): Promise<void> {
     await this.index.addDocuments([item]);
   }
   async remove(id: string): Promise<void> {
     await this.index.deleteDocument(id);
   }
-  async put(id: string, item: IndexableFileReference<string>): Promise<void> {
+  async put(id: string, item: SearchIndexableFileReference): Promise<void> {
     await this.index.updateDocuments([item]);
   }
-  async search(query: string): Promise<IndexableFileReference<string>[]> {
+  async search(query: string): Promise<SearchIndexableFileReference[]> {
     const results = await this.index.search(query).then((result) => result.hits);
     const fullDataResult = results.map((result) =>
       (this.cache.getByHash(result.id))

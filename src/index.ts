@@ -5,7 +5,7 @@ import { join } from "path";
 import { readFile } from "fs/promises";
 import mime from "mime-types";
 import { LibrarianCache } from "./cache/cache.ts";
-import { IndexableFileReference } from "./types/pdf-file-reference";
+import { SearchIndexableFileReference } from "./types/pdf-file-reference";
 import { hash } from "./utils/hash.ts";
 import { logger } from "./utils/logger.ts";
 import {
@@ -34,8 +34,8 @@ async function getFileContent(
   relativePath: string,
   absolutePath: string,
   cache: LibrarianCache
-): Promise<IndexableFileReference> {
-  let fileReference: IndexableFileReference<string> = await cache.getByPath(
+): Promise<SearchIndexableFileReference> {
+  let fileReference: SearchIndexableFileReference = await cache.getByPath(
     relativePath
   );
   if (!fileReference) {
@@ -70,7 +70,7 @@ async function main() {
   const cache = new LibrarianCache(cachePath);
   logger.log("Loading cache");
   await cache.load();
-  const indexer: BaseIndexer<IndexableFileReference<string>> = new MeiliSearchIndexer(
+  const indexer: BaseIndexer<SearchIndexableFileReference> = new MeiliSearchIndexer(
     cache,
     join(workDir, `librarian-index-${MeiliSearchIndexer.indexerType}.json`)
   );

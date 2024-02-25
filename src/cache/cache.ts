@@ -1,6 +1,6 @@
 import { Database, open } from "sqlite";
 import sqlite3 from "sqlite3";
-import { IndexableFileReference } from "../types/pdf-file-reference";
+import { InsertionIndexableFileReference, SearchIndexableFileReference } from "../types/pdf-file-reference";
 import { rawLinesToPlainText } from "../utils/raw-lines-to-plain-text";
 import { readPdfText as _readPdfText } from "pdf-text-reader";
 import { singletonOcrRef } from "../utils/ocr";
@@ -15,7 +15,7 @@ interface FileDBModel {
 
 export function cacheToIndexableFileReference(
   cache: Omit<FileDBModel, "id">
-): IndexableFileReference<string> {
+): SearchIndexableFileReference {
   let plainTextContent: string;
   if (cache.mimeType === "application/pdf") {
     plainTextContent = rawLinesToPlainText(JSON.parse(cache.textContent));
@@ -38,7 +38,7 @@ async function readPdfText(data: Buffer) {
 }
 
 export async function indexableFileReferenceToCache(
-  cache: IndexableFileReference<Buffer>,
+  cache: InsertionIndexableFileReference
 ): Promise<Omit<FileDBModel, "id">> {
   const type = cache.mimeType;
   let textSerializedContent: string;
@@ -96,7 +96,7 @@ export class LibrarianCache {
     await this.db.close();
   }
 
-  async getByPath(key: string): Promise<IndexableFileReference> {
+  async getByPath(key: string): Promise<SearchIndexableFileReference> {
     const query = `SELECT * FROM files WHERE path = ?`;
     const result = await this.db.get<FileDBModel>(query, key);
     if (!result) return null;
@@ -106,7 +106,7 @@ export class LibrarianCache {
   async getByHash(
     hash: string,
     path?: string
-  ): Promise<IndexableFileReference> {
+  ): Promise<SearchIndexableFileReference> {
     const query = `SELECT * FROM files WHERE hash = ?`;
     const result = await this.db.get<FileDBModel>(query, hash);
     if (result && path && result.path !== path) {
@@ -118,7 +118,7 @@ export class LibrarianCache {
     return cacheToIndexableFileReference(result);
   }
 
-  async set(value: IndexableFileReference<Buffer>) {
+  async set(value: InsertionIndexableFileReference) {
     const query = `INSERT INTO files (path, hash, textContent, mimeType) VALUES (?, ?, ?, ?)`;
     const fileRefToInsert = await indexableFileReferenceToCache(value);
     await this.db.run(
