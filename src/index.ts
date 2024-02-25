@@ -34,8 +34,8 @@ async function getFileContent(
   relativePath: string,
   absolutePath: string,
   cache: LibrarianCache
-): Promise<SearchIndexableFileReference> {
-  let fileReference: SearchIndexableFileReference = await cache.getByPath(
+): Promise<SearchIndexableFileReference[]> {
+  let fileReference: SearchIndexableFileReference[] | null = await cache.getByPath(
     relativePath
   );
   if (!fileReference) {
@@ -91,15 +91,18 @@ async function main() {
     const absolutePdfDir = join(searchDir, pdfDir);
     try {
       logger.log(`${++i}/${pdfDirs.length} - Processing: `, pdfDir);
-      const fileEntry = await getFileContent(pdfDir, absolutePdfDir, cache);
+      const fileEntres = await getFileContent(pdfDir, absolutePdfDir, cache);
 
-      const entryExists = await indexer.exists(fileEntry.id);
-      if (!entryExists) {
-        logger.log(" - New index entry, indexing");
+      for (const fileEntry of fileEntres) {
+        const entryExists = await indexer.exists(fileEntry.id);
+        if (!entryExists) {
+          logger.log(" - New index entry, indexing", fileEntry.id);
 
-        await indexer.add(fileEntry);
-      } else {
-        // TODO: 
+          await indexer.add(fileEntry);
+        } else {
+          logger.log(" - Index entry exists, skipping", fileEntry.id);
+          // TODO: 
+        }
       }
     } catch (e) {
       logger.error(pdfDir, e);

@@ -9,7 +9,7 @@ export function findAllOccurences(text: string, query: string): number[] {
     result.push(startIndex);
     startIndex = text.indexOf(query, startIndex + 1);
   }
-  return result;
+  return result.slice(0, 1);
 }
 
 export const hightlightSeparator = (title: string) => {

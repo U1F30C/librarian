@@ -6,4 +6,4 @@ export interface IndexableFileReference<Content = any> {
 }
 
 export type InsertionIndexableFileReference = IndexableFileReference<Buffer>;
-export type SearchIndexableFileReference = IndexableFileReference<string>;
+export type SearchIndexableFileReference = IndexableFileReference<string> & { listableContent: string, parentId: string};

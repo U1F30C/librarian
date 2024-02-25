@@ -3,6 +3,12 @@ import { BaseIndexer } from "./BaseIndexer";
 
 import { MeiliSearch, Index, Config } from 'meilisearch'
 
+type ItemKey = keyof SearchIndexableFileReference;
+
+// just validate the keys used are valid
+function staticKeys(keys: ItemKey[]): ItemKey[] {
+  return keys;
+}
 
 export class MeiliSearchIndexer
   implements BaseIndexer<SearchIndexableFileReference>
@@ -47,12 +53,9 @@ export class MeiliSearchIndexer
   async load() {
     this.index = this.client.index("files");
     await this.index.updateSettings({
-        filterableAttributes: ["id", "mimeType"],
-        searchableAttributes: ["title", "content"],
-        
-        displayedAttributes: ["id", "title", "mimeType"],
-        // faceting: {
-        // typoTolerance: false,
+        filterableAttributes: staticKeys(["id", "mimeType", "parentId"]),
+        searchableAttributes: staticKeys(["title", "content"]),
+        displayedAttributes: staticKeys(["id", "title", "mimeType", "listableContent"]),
     });
   }
   async dump() {

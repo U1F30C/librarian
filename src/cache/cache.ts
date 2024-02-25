@@ -1,7 +1,7 @@
 import { Database, open } from "sqlite";
 import sqlite3 from "sqlite3";
 import { InsertionIndexableFileReference, SearchIndexableFileReference } from "../types/pdf-file-reference";
-import { rawLinesToPlainText } from "../utils/raw-lines-to-plain-text";
+import { plainTextPagesToPlainText, rawLinesToPlainTextPages } from "../utils/raw-lines-to-plain-text";
 import { readPdfText as _readPdfText } from "pdf-text-reader";
 import { singletonOcrRef } from "../utils/ocr";
 
@@ -10,26 +10,42 @@ interface FileDBModel {
   path: string;
   hash: string;
   mimeType: string;
+  // serialized text content that can be the raw text or some other format that can be transformed into text
   textContent: string;
+}
+
+function appendPageNumber(str: string, i: number, length: number) {
+  if (length === 1) return str;
+  return `${str}-${i + 1}`;
 }
 
 export function cacheToIndexableFileReference(
   cache: Omit<FileDBModel, "id">
-): SearchIndexableFileReference {
-  let plainTextContent: string;
+): SearchIndexableFileReference[] {
+  let plainTextContentPages: string[];
   if (cache.mimeType === "application/pdf") {
-    plainTextContent = rawLinesToPlainText(JSON.parse(cache.textContent));
+    plainTextContentPages = rawLinesToPlainTextPages(JSON.parse(cache.textContent));
   } else if (["image/jpeg", "image/png"].includes(cache.mimeType)) {
-    plainTextContent = cache.textContent;
+    plainTextContentPages = [cache.textContent];
   } else {
-    plainTextContent = cache.textContent;
+    plainTextContentPages = [cache.textContent];
   }
-  return {
+  const pagesLength = plainTextContentPages.length;
+  return plainTextContentPages.map((page, i) => ({
+    id: appendPageNumber(cache.hash, i, pagesLength),
+    title: appendPageNumber(cache.path, i, pagesLength),
+    content: page,
+    mimeType: cache.mimeType,
+    parentId: cache.hash,
+    listableContent: page,
+  })).concat({
     id: cache.hash,
     title: cache.path,
-    content: plainTextContent,
+    content: plainTextPagesToPlainText(plainTextContentPages),
     mimeType: cache.mimeType,
-  };
+    parentId: null,
+    listableContent: plainTextContentPages[0]
+  });
 }
 
 async function readPdfText(data: Buffer) {
@@ -96,7 +112,7 @@ export class LibrarianCache {
     await this.db.close();
   }
 
-  async getByPath(key: string): Promise<SearchIndexableFileReference> {
+  async getByPath(key: string): Promise<SearchIndexableFileReference[]> {
     const query = `SELECT * FROM files WHERE path = ?`;
     const result = await this.db.get<FileDBModel>(query, key);
     if (!result) return null;
@@ -106,7 +122,7 @@ export class LibrarianCache {
   async getByHash(
     hash: string,
     path?: string
-  ): Promise<SearchIndexableFileReference> {
+  ): Promise<SearchIndexableFileReference[]> {
     const query = `SELECT * FROM files WHERE hash = ?`;
     const result = await this.db.get<FileDBModel>(query, hash);
     if (result && path && result.path !== path) {
