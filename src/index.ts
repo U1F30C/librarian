@@ -71,7 +71,6 @@ async function main() {
   logger.log("Loading cache");
   await cache.load();
   const indexer: BaseIndexer<SearchIndexableFileReference> = new MeiliSearchIndexer(
-    cache,
     join(workDir, `librarian-index-${MeiliSearchIndexer.indexerType}.json`)
   );
   logger.log("Loading indexers");

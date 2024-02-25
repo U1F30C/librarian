@@ -1,6 +1,4 @@
-import { LibrarianCache } from "../cache/cache";
 import { SearchIndexableFileReference } from "../types/pdf-file-reference";
-import { rawLinesToPlainText } from "../utils/raw-lines-to-plain-text";
 import { BaseIndexer } from "./BaseIndexer";
 
 import { MeiliSearch, Index } from 'meilisearch'
@@ -13,7 +11,7 @@ export class MeiliSearchIndexer
   private client: MeiliSearch;
   private index: Index;
   
-  constructor(private cache: LibrarianCache, private indexPath: string) {
+  constructor(private indexPath: string) {
     this.client = new MeiliSearch({
       host: "http://127.0.0.1:7700",
       apiKey: "masterKey",
@@ -32,18 +30,16 @@ export class MeiliSearchIndexer
   async search(query: string): Promise<SearchIndexableFileReference[]> {
     const results = await this.index.search(query).then((result) => result.hits);
     const fullDataResult = results.map((result) =>
-      (this.cache.getByHash(result.id))
+      (this.index.getDocument(result.id))
     );
-    return Promise.all(fullDataResult);
+    return Promise.all(fullDataResult) as Promise<SearchIndexableFileReference[]>;
   }
   async exists(id: string): Promise<boolean> {
     return this.index
-      .search("", {
-        filter: [`id = ${id}`],
-      })
+      .getDocument(id)
       .then((result) => {
         return result.hits.length > 0;
-      });
+      }).catch(() => false);
   }
   async serialize(): Promise<string> {
     throw new Error("Not implemented");
