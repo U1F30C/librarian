@@ -39,8 +39,8 @@ async function readPdfText(data: Buffer) {
 
 export async function indexableFileReferenceToCache(
   cache: IndexableFileReference<Buffer>,
-  type: string
 ): Promise<Omit<FileDBModel, "id">> {
+  const type = cache.mimeType;
   let textSerializedContent: string;
   if (type === "application/pdf") {
     textSerializedContent = await readPdfText(cache.content).then(
@@ -118,18 +118,15 @@ export class LibrarianCache {
     return cacheToIndexableFileReference(result);
   }
 
-  async set(value: IndexableFileReference<Buffer>, mimeType: string) {
+  async set(value: IndexableFileReference<Buffer>) {
     const query = `INSERT INTO files (path, hash, textContent, mimeType) VALUES (?, ?, ?, ?)`;
-    const fileRefToInsert = await indexableFileReferenceToCache(
-      value,
-      mimeType
-    );
+    const fileRefToInsert = await indexableFileReferenceToCache(value);
     await this.db.run(
       query,
       fileRefToInsert.path,
       fileRefToInsert.hash,
       fileRefToInsert.textContent,
-      mimeType
+      fileRefToInsert.mimeType
     );
     return cacheToIndexableFileReference(fileRefToInsert);
   }

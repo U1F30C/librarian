@@ -50,8 +50,8 @@ async function getFileContent(
           id: fileHash,
           title: relativePath,
           content: fileBinaryData,
+          mimeType: (mime.lookup(relativePath) as string) ?? "application/octet-stream",
         },
-        (mime.lookup(relativePath) as string) ?? "application/octet-stream"
       );
     }
   }
