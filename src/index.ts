@@ -70,9 +70,12 @@ async function main() {
   const cache = new LibrarianCache(cachePath);
   logger.log("Loading cache");
   await cache.load();
-  const indexer: BaseIndexer<SearchIndexableFileReference> = new MeiliSearchIndexer(
-    join(workDir, `librarian-index-${MeiliSearchIndexer.indexerType}.json`)
-  );
+  const meilisearchConfig = {
+    host: "http://127.0.0.1:7700",
+    apiKey: "masterKey",
+  };
+  const indexer: BaseIndexer<SearchIndexableFileReference> =
+    new MeiliSearchIndexer(meilisearchConfig);
   logger.log("Loading indexers");
 
   logger.log(" - ", (indexer as any).constructor.indexerType);

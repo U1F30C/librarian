@@ -1,7 +1,7 @@
 import { SearchIndexableFileReference } from "../types/pdf-file-reference";
 import { BaseIndexer } from "./BaseIndexer";
 
-import { MeiliSearch, Index } from 'meilisearch'
+import { MeiliSearch, Index, Config } from 'meilisearch'
 
 
 export class MeiliSearchIndexer
@@ -11,11 +11,8 @@ export class MeiliSearchIndexer
   private client: MeiliSearch;
   private index: Index;
   
-  constructor(private indexPath: string) {
-    this.client = new MeiliSearch({
-      host: "http://127.0.0.1:7700",
-      apiKey: "masterKey",
-    });
+  constructor(config: Config) {
+    this.client = new MeiliSearch(config);
 
   }
   async add(item: SearchIndexableFileReference): Promise<void> {
