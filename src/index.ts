@@ -1,5 +1,4 @@
 import { dirExists, readDir } from "fs-safe";
-import inquirer from "inquirer";
 import { join } from "path";
 
 import { readFile } from "fs/promises";
@@ -8,15 +7,10 @@ import { LibrarianCache } from "./cache/cache.ts";
 import { SearchIndexableFileReference } from "./types/pdf-file-reference";
 import { hash } from "./utils/hash.ts";
 import { logger } from "./utils/logger.ts";
-import {
-  findAllOccurences,
-  highlightTitleOccurrences,
-  highlightWithContext,
-  hightlightSeparator,
-} from "./utils/result-reporting.ts";
 import { singletonOcrRef } from "./utils/ocr.ts";
 import { MeiliSearchIndexer } from "./indexers/MeilisearchIndexer.ts";
 import { BaseIndexer } from "./indexers/BaseIndexer.ts";
+import { promptAndSearch } from "./search-interfaces/cli-search/index.ts";
 
 const supportedEextensions = ["pdf", "json", "txt", "md", "html", "jpeg", "jpg", "png" ] as const;
 const supportedEextensionsRegex = new RegExp(
@@ -110,29 +104,7 @@ async function main() {
   }
 
   while (!shouldExit) {
-    const answer = await inquirer.prompt({
-      type: "input",
-      name: "searchTerm",
-      message: "Search term: ",
-    });
-    const searchTerm = answer.searchTerm;
-    logger.log("Searching for: ", searchTerm);
-    const indexerName = (indexer as any).constructor.indexerType;
-    console.time(indexerName);
-    const searchResults = await indexer.search(searchTerm);
-    console.timeEnd(indexerName);
-    for (const result of searchResults) {
-      const occurences = findAllOccurences(result.content, searchTerm);
-      const titleOccurrences = findAllOccurences(result.title, searchTerm);
-      for (const occurence of occurences) {
-        logger.log(
-          hightlightSeparator(result.title),
-          highlightWithContext(result.content, occurence, searchTerm.length, 25)
-        );
-      }
-      if (titleOccurrences.length > 0)
-        logger.log(highlightTitleOccurrences(result.title));
-    }
+    await promptAndSearch(indexer);
   }
   process.exit(0);
 }
