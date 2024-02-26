@@ -1,5 +1,5 @@
 export interface BaseIndexer<Item> {
-  add(item: Item): Promise<void>;
+  add(item: Item | Item[]): Promise<void>;
   remove(id: string): Promise<void>;
   put(id: string, item: Item): Promise<void>;
   search(query: string): Promise<Item[]>;

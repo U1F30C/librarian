@@ -1,3 +1,4 @@
+import { castArray } from "lodash";
 import { SearchIndexableFileReference } from "../types/pdf-file-reference";
 import { BaseIndexer } from "./BaseIndexer";
 
@@ -21,8 +22,8 @@ export class MeiliSearchIndexer
     this.client = new MeiliSearch(config);
 
   }
-  async add(item: SearchIndexableFileReference): Promise<void> {
-    await this.index.addDocuments([item]);
+  async add(item: SearchIndexableFileReference | SearchIndexableFileReference[]): Promise<void> {
+    await this.index.addDocuments(castArray(item));
   }
   async remove(id: string): Promise<void> {
     await this.index.deleteDocument(id);
