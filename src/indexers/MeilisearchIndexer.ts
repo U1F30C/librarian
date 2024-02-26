@@ -53,6 +53,9 @@ export class MeiliSearchIndexer
   }
   async load() {
     this.index = this.client.index("files");
+    this.index.update({
+      primaryKey: "id",
+    });
     await this.index.updateSettings({
         filterableAttributes: staticKeys(["id", "mimeType", "parentId"]),
         searchableAttributes: staticKeys(["title", "content"]),
