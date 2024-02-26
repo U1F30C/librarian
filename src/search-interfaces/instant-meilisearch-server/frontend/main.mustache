@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@meilisearch/instant-meilisearch/templates/basic_search.css" /> -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/instantsearch.css@8.1.0/themes/reset-min.css" integrity="sha256-2AeJLzExpZvqLUxMfcs+4DWcMwNfpnjUeAAvEtPr0wU=" crossorigin="anonymous">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/instantsearch.css@8.1.0/themes/satellite-min.css" integrity="sha256-p/rGN4RGy6EDumyxF9t7LKxWGg6/MZfGhJM/asKkqvA=" crossorigin="anonymous">
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <div id="searchbox" focus></div>
+      <div id="refinement-list"></div>
+      <div id="stats"></div>
+      <div id="pagination" class="pagination"></div>
+      <div id="hits"></div>
+    </div>
+  </body>
+  <script src="https://cdn.jsdelivr.net/npm/@meilisearch/instant-meilisearch/dist/instant-meilisearch.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4"></script>
+  <script>
+    const search = instantsearch({
+      indexName: "files",
+      searchClient: instantMeiliSearch(
+        // do not escape mustache tags
+        '{{{meilisearchUrl}}}',
+        '{{{meilisearchApiKey}}}',
+        { finitePagination: true },
+      ).searchClient
+      });
+      search.addWidgets([
+        instantsearch.widgets.refinementList({
+          container: '#refinement-list',
+          attribute: 'mimeType',
+        }),
+        instantsearch.widgets.searchBox({
+          container: "#searchbox"
+        }),
+        instantsearch.widgets.stats({
+          container: "#stats"
+        }),
+        instantsearch.widgets.pagination({
+          container: "#pagination",
+          showFirst: true,
+          showLast: true,
+          padding: 7,
+          scrollTo: true,
+          // totalPages: 20,
+        }),
+        instantsearch.widgets.configure({
+          attributesToSnippet: ['listableContent:100'],
+          hitsPerPage: 20,
+          filters: 'parentId IS NULL',
+          finitePagination: true,
+        }),
+        instantsearch.widgets.hits({
+          container: "#hits",
+          templates: {
+          item: `
+          {{=<% %>=}}
+            <div>
+              <a href="/files/{{id}}">
+                <div class="hit-name">
+                  {{#helpers.highlight}}{ "attribute": "title" }{{/helpers.highlight}}
+                </div>
+              </a>
+              <div class="hit-name" style="display: none;">
+                {{#helpers.highlight}}{ "attribute": "mimeType" }{{/helpers.highlight}}
+              </div>
+              <div class="hit-content">
+                {{#helpers.snippet}}{ "attribute": "listableContent" }{{/helpers.snippet}}
+              </div>
+            </div>
+          <%={{ }}=%>
+          `
+          }
+        })
+      ]);
+      search.start();
+  </script>
+</html>

@@ -8,13 +8,14 @@ import { MeiliSearchIndexer } from "./indexers/MeilisearchIndexer.ts";
 import { BaseIndexer } from "./indexers/BaseIndexer.ts";
 import { promptAndSearch } from "./search-interfaces/cli-search/index.ts";
 import { FileScannerIndexer } from "./file-scanner/index.ts";
+import { startInstantMeiliSearchServer } from "./search-interfaces/instant-meilisearch-server/index.ts";
 
 
 let shouldExit = false;
-process.on("SIGINT", function () {
-  shouldExit = true;
-  logger.log("Caught interrupt signal");
-});
+// process.on("SIGINT", function () {
+//   shouldExit = true;
+//   logger.log("Caught interrupt signal");
+// });
 
 async function main() {
   const searchDir = process.argv[4];
@@ -40,11 +41,8 @@ async function main() {
   await indexer.load();
 
   const fileScanner = new FileScannerIndexer(indexer, cache);
-  await fileScanner.scanAndIndexFiles(searchDir);
+  // await fileScanner.scanAndIndexFiles(searchDir);
 
-  while (!shouldExit) {
-    await promptAndSearch(indexer);
-  }
-  process.exit(0);
+  startInstantMeiliSearchServer(meilisearchConfig, 3007);
 }
 main();
