@@ -5,8 +5,9 @@ It will:
 - Keep a cache of the file contents and indexes and keep file hash to detect renamings to avoid reprocessing files (doesn't account for duplicate files)
 - Extract plain text from files using `pdf-text-reader` and `tesseract.js`
 - Index extracted text
-- Allow searching meilisearch engine
-- Highlight all of the occurrences of the search term
+- Allow searching using meilisearch engine, can be done through:
+  - CLI, grep-like prompt tool
+  - Web interface with launched server
 
 ## Inspiration
 I wanted to search in a bunch of pdf files, quickly. I used to use pdfgrep but that was a bit slow even with the cache and the cache didn't last for long. I thought it'b be funnier to make my own tool rather than modifying pdfgrep to extend the cache lifespan.
