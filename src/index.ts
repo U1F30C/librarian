@@ -1,58 +1,20 @@
-import { dirExists, readDir } from "fs-safe";
 import { join } from "path";
 
-import { readFile } from "fs/promises";
-import mime from "mime-types";
 import { LibrarianCache } from "./cache/cache.ts";
 import { SearchIndexableFileReference } from "./types/pdf-file-reference";
-import { hash } from "./utils/hash.ts";
 import { logger } from "./utils/logger.ts";
 import { singletonOcrRef } from "./utils/ocr.ts";
 import { MeiliSearchIndexer } from "./indexers/MeilisearchIndexer.ts";
 import { BaseIndexer } from "./indexers/BaseIndexer.ts";
 import { promptAndSearch } from "./search-interfaces/cli-search/index.ts";
-import { chunk } from "lodash";
-import { sleep } from "./utils/sleep.ts";
+import { FileScannerIndexer } from "./file-scanner/index.ts";
 
-const supportedEextensions = ["pdf", "json", "txt", "md", "html", "jpeg", "jpg", "png" ] as const;
-const supportedEextensionsRegex = new RegExp(
-  `\.(${supportedEextensions.join("|")})$`,
-  "i"
-);
 
 let shouldExit = false;
 process.on("SIGINT", function () {
   shouldExit = true;
   logger.log("Caught interrupt signal");
 });
-
-async function getFileContent(
-  relativePath: string,
-  absolutePath: string,
-  cache: LibrarianCache
-): Promise<SearchIndexableFileReference[]> {
-  let fileReference: SearchIndexableFileReference[] | null = await cache.getByPath(
-    relativePath
-  );
-  if (!fileReference) {
-    logger.log(" - Cache miss: ", relativePath);
-    const fileBinaryData = await readFile(absolutePath);
-    const fileHash = await hash(fileBinaryData);
-    fileReference = await cache.getByHash(fileHash, relativePath);
-    if (!fileReference) {
-      logger.log("   - Backup cache key miss: ", relativePath);
-      fileReference = await cache.set(
-        {
-          id: fileHash,
-          title: relativePath,
-          content: fileBinaryData,
-          mimeType: (mime.lookup(relativePath) as string) ?? "application/octet-stream",
-        },
-      );
-    }
-  }
-  return fileReference;
-}
 
 async function main() {
   const searchDir = process.argv[4];
@@ -77,47 +39,8 @@ async function main() {
   logger.log(" - ", (indexer as any).constructor.indexerType);
   await indexer.load();
 
-  if (!(await dirExists(searchDir)))
-    throw new Error("Search directory does not exist");
-  const dirs = await readDir(searchDir, { recursive: true });
-  const pdfDirs = dirs!.filter((dir) => supportedEextensionsRegex.test(dir));
-  const chunkedPdfDirs = chunk(pdfDirs, 10);
-
-  let i = 0;
-  for (const pdfDirChunk of chunkedPdfDirs) {
-    await sleep(2000);
-    const queue: SearchIndexableFileReference[] = [];
-    for (const pdfDir of pdfDirChunk) {
-      if (shouldExit) break;
-      const absolutePdfDir = join(searchDir, pdfDir);
-      try {
-        logger.log(`${++i}/${pdfDirs.length} - Processing: `, pdfDir);
-        const fileEntres = await getFileContent(pdfDir, absolutePdfDir, cache);
-
-        if (await indexer.exists(fileEntres[fileEntres.length - 1].id)) {
-          logger.log(
-            " - Index entry exists, skipping the lot",
-            fileEntres[fileEntres.length - 1].id
-          );
-          continue;
-        }
-
-        for (const fileEntry of fileEntres) {
-          const entryExists = await indexer.exists(fileEntry.id);
-          if (!entryExists) {
-            logger.log(" - New index entry, indexing", fileEntry.id);
-            queue.push(fileEntry);
-          } else {
-            logger.log(" - Index entry exists, skipping", fileEntry.id);
-            // TODO:
-          }
-        }
-      } catch (e) {
-        logger.error(pdfDir, e);
-      }
-    }
-    await indexer.add(queue);
-  }
+  const fileScanner = new FileScannerIndexer(indexer, cache);
+  await fileScanner.scanAndIndexFiles(searchDir);
 
   while (!shouldExit) {
     await promptAndSearch(indexer);
