@@ -11,6 +11,8 @@ import { singletonOcrRef } from "./utils/ocr.ts";
 import { MeiliSearchIndexer } from "./indexers/MeilisearchIndexer.ts";
 import { BaseIndexer } from "./indexers/BaseIndexer.ts";
 import { promptAndSearch } from "./search-interfaces/cli-search/index.ts";
+import { chunk } from "lodash";
+import { sleep } from "./utils/sleep.ts";
 
 const supportedEextensions = ["pdf", "json", "txt", "md", "html", "jpeg", "jpg", "png" ] as const;
 const supportedEextensionsRegex = new RegExp(
@@ -79,28 +81,42 @@ async function main() {
     throw new Error("Search directory does not exist");
   const dirs = await readDir(searchDir, { recursive: true });
   const pdfDirs = dirs!.filter((dir) => supportedEextensionsRegex.test(dir));
+  const chunkedPdfDirs = chunk(pdfDirs, 10);
+
   let i = 0;
-  for (const pdfDir of pdfDirs) {
-    if (shouldExit) break;
-    const absolutePdfDir = join(searchDir, pdfDir);
-    try {
-      logger.log(`${++i}/${pdfDirs.length} - Processing: `, pdfDir);
-      const fileEntres = await getFileContent(pdfDir, absolutePdfDir, cache);
+  for (const pdfDirChunk of chunkedPdfDirs) {
+    await sleep(2000);
+    const queue: SearchIndexableFileReference[] = [];
+    for (const pdfDir of pdfDirChunk) {
+      if (shouldExit) break;
+      const absolutePdfDir = join(searchDir, pdfDir);
+      try {
+        logger.log(`${++i}/${pdfDirs.length} - Processing: `, pdfDir);
+        const fileEntres = await getFileContent(pdfDir, absolutePdfDir, cache);
 
-      for (const fileEntry of fileEntres) {
-        const entryExists = await indexer.exists(fileEntry.id);
-        if (!entryExists) {
-          logger.log(" - New index entry, indexing", fileEntry.id);
-
-          await indexer.add(fileEntry);
-        } else {
-          logger.log(" - Index entry exists, skipping", fileEntry.id);
-          // TODO: 
+        if (await indexer.exists(fileEntres[fileEntres.length - 1].id)) {
+          logger.log(
+            " - Index entry exists, skipping the lot",
+            fileEntres[fileEntres.length - 1].id
+          );
+          continue;
         }
+
+        for (const fileEntry of fileEntres) {
+          const entryExists = await indexer.exists(fileEntry.id);
+          if (!entryExists) {
+            logger.log(" - New index entry, indexing", fileEntry.id);
+            queue.push(fileEntry);
+          } else {
+            logger.log(" - Index entry exists, skipping", fileEntry.id);
+            // TODO:
+          }
+        }
+      } catch (e) {
+        logger.error(pdfDir, e);
       }
-    } catch (e) {
-      logger.error(pdfDir, e);
     }
+    await indexer.add(queue);
   }
 
   while (!shouldExit) {
